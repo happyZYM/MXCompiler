@@ -1,0 +1,5 @@
+include_directories(/usr/include/antlr4-runtime/)
+include_directories(${CMAKE_SOURCE_DIR}/include/semantic)
+file(GLOB SEMANTIC_SOURCES "*.cpp")
+add_library(semantic STATIC ${SEMANTIC_SOURCES})
+target_link_libraries(semantic PUBLIC antlr4-runtime)
