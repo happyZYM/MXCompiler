@@ -9,5 +9,7 @@ OUTPUT_DIR="../src/semantic/antlr-generated"
 mkdir -p "$OUTPUT_DIR"
 # Run ANTLR to generate lexer and parser
 antlr4 -Dlanguage=Cpp -no-listener -visitor MXLexer.g4 MXParser.g4 -o "$OUTPUT_DIR"
+rm "$OUTPUT_DIR/MXParserBaseVisitor.cpp"
+rm "$OUTPUT_DIR/MXParserBaseVisitor.h"
 # Return to the original directory
 cd - > /dev/null

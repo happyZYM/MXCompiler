@@ -21,19 +21,29 @@ public:
    */
     virtual std::any visitMxprog(MXParser::MxprogContext *context) = 0;
 
-    virtual std::any visitFunction(MXParser::FunctionContext *context) = 0;
+    virtual std::any visitFunction_def(MXParser::Function_defContext *context) = 0;
 
-    virtual std::any visitType(MXParser::TypeContext *context) = 0;
+    virtual std::any visitClass_def(MXParser::Class_defContext *context) = 0;
 
-    virtual std::any visitBlock(MXParser::BlockContext *context) = 0;
+    virtual std::any visitClass_var_def(MXParser::Class_var_defContext *context) = 0;
+
+    virtual std::any visitClass_constructor(MXParser::Class_constructorContext *context) = 0;
+
+    virtual std::any visitSuite(MXParser::SuiteContext *context) = 0;
 
     virtual std::any visitStatement(MXParser::StatementContext *context) = 0;
 
-    virtual std::any visitExpression(MXParser::ExpressionContext *context) = 0;
+    virtual std::any visitDefine_statement(MXParser::Define_statementContext *context) = 0;
 
-    virtual std::any visitReturnStmt(MXParser::ReturnStmtContext *context) = 0;
+    virtual std::any visitExpr(MXParser::ExprContext *context) = 0;
 
-    virtual std::any visitIfStmt(MXParser::IfStmtContext *context) = 0;
+    virtual std::any visitBasic_expr(MXParser::Basic_exprContext *context) = 0;
+
+    virtual std::any visitFormatted_string(MXParser::Formatted_stringContext *context) = 0;
+
+    virtual std::any visitConstant(MXParser::ConstantContext *context) = 0;
+
+    virtual std::any visitType(MXParser::TypeContext *context) = 0;
 
 
 };
