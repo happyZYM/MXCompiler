@@ -7,7 +7,7 @@ mxprog
     ;
 
 function_def
-    : type ID LPAREN ((type ID)(COMMA type ID)*)? RPAREN suite
+    : type (LBRACKET RBRACKET)* ID LPAREN ((type (LBRACKET RBRACKET)* ID)(COMMA type (LBRACKET RBRACKET)* ID)*)? RPAREN suite
     ;
 
 class_def : CLASS ID LBRACE (class_var_def|class_constructor|function_def)* RBRACE SEMICOLON;
@@ -15,45 +15,45 @@ class_var_def : type (LBRACKET RBRACKET)* ID (COMMA ID )* SEMICOLON;
 class_constructor : ID LPAREN RPAREN suite;
 suite : LBRACE statement* RBRACE;
 statement
-    : SEMICOLON
-    | define_statement
-    | expr SEMICOLON
-    | IF LPAREN expr RPAREN statement (ELSE statement)?
-    | WHILE LPAREN expr RPAREN statement
-    | FOR LPAREN (define_statement|(expr SEMICOLON)|SEMICOLON) expr? SEMICOLON (define_statement|expr)? RPAREN statement
-    | (BREAK|CONTINUE|(RETURN expr?)) SEMICOLON
-    | suite
+    : SEMICOLON #empty_statement
+    | define_statement #definition_statement
+    | expr SEMICOLON #expr_statement
+    | IF LPAREN expr RPAREN statement (ELSE statement)? #if_statement
+    | WHILE LPAREN expr RPAREN statement #while_statement
+    | FOR LPAREN (define_statement|(expr SEMICOLON)|SEMICOLON) expr? SEMICOLON (define_statement|expr)? RPAREN statement #for_statement
+    | (BREAK|CONTINUE|(RETURN expr?)) SEMICOLON #jmp_statement
+    | suite #suite_statement
     ;
 define_statement : type (LBRACKET RBRACKET)* ID (ASSIGN expr)? (COMMA ID (ASSIGN expr)?)* SEMICOLON;
 expr
-    : basic_expr
-    | LPAREN expr RPAREN
-    | expr DOT (ID|(ID LPAREN (expr (COMMA expr)*)? RPAREN))
-    | expr (LBRACKET expr RBRACKET)+
-    | expr (SELF_PLUS | SELF_MINUS)
-    | (SELF_PLUS | SELF_MINUS) expr
-    | MINUS expr
-    | LNOT expr
-    | BNOT expr
-    | expr (MULTIPLY|DIVIDE|MOD) expr
-    | expr (PLUS|MINUS) expr
-    | expr (ARS|ALS) expr
-    | expr (GN|GE|LN|LE) expr
-    | expr (NE|EQ) expr
-    | expr BAND expr
-    | expr BXOR expr
-    | expr BOR expr
-    | expr LAND expr
-    | expr LOR expr
-    | expr QUESTION_MARK expr COLON expr
-    | <assoc=right> expr ASSIGN expr
-    | NEW ID
-    | NEW ID LPAREN RPAREN
-    | NEW ID (LBRACKET expr RBRACKET)*(LBRACKET RBRACKET)*constant?
+    : basic_expr #basic_expression
+    | NEW type (LBRACKET expr? RBRACKET)*constant? #new_array_expression
+    | NEW type LPAREN RPAREN #new_construct_expression
+    | NEW type #new_expression
+    | expr DOT (ID|(ID LPAREN (expr (COMMA expr)*)? RPAREN)) #access_expression
+    | expr (LBRACKET expr RBRACKET)+ #index_expression
+    | expr (SELF_PLUS | SELF_MINUS) #suffix_expression
+    | (SELF_PLUS | SELF_MINUS) expr #prefix_expression
+    | MINUS expr #opposite_expression
+    | LNOT expr #lnot_expression
+    | BNOT expr #bnot_expression
+    | expr (MULTIPLY|DIVIDE|MOD) expr #mdm_expression
+    | expr (PLUS|MINUS) expr #pm_expression
+    | expr (ARS|ALS) expr #rl_expression
+    | expr (GN|GE|LN|LE) expr #ggll_expression
+    | expr (NE|EQ) expr #ne_expression
+    | expr BAND expr #band_expression
+    | expr BXOR expr #bxor_expression
+    | expr BOR expr #bor_expression
+    | expr LAND expr #land_expression
+    | expr LOR expr #lor_expression
+    | <assoc=right> expr QUESTION_MARK expr COLON expr #ternary_expression
+    | <assoc=right> expr ASSIGN expr #assign_expression
     ;
 
 basic_expr
     : THIS
+    | LPAREN expr RPAREN
     | ID
     | ID LPAREN (expr (COMMA expr)*)? RPAREN
     | formatted_string

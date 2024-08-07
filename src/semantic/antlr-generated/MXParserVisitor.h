@@ -31,11 +31,69 @@ public:
 
     virtual std::any visitSuite(MXParser::SuiteContext *context) = 0;
 
-    virtual std::any visitStatement(MXParser::StatementContext *context) = 0;
+    virtual std::any visitEmpty_statement(MXParser::Empty_statementContext *context) = 0;
+
+    virtual std::any visitDefinition_statement(MXParser::Definition_statementContext *context) = 0;
+
+    virtual std::any visitExpr_statement(MXParser::Expr_statementContext *context) = 0;
+
+    virtual std::any visitIf_statement(MXParser::If_statementContext *context) = 0;
+
+    virtual std::any visitWhile_statement(MXParser::While_statementContext *context) = 0;
+
+    virtual std::any visitFor_statement(MXParser::For_statementContext *context) = 0;
+
+    virtual std::any visitJmp_statement(MXParser::Jmp_statementContext *context) = 0;
+
+    virtual std::any visitSuite_statement(MXParser::Suite_statementContext *context) = 0;
 
     virtual std::any visitDefine_statement(MXParser::Define_statementContext *context) = 0;
 
-    virtual std::any visitExpr(MXParser::ExprContext *context) = 0;
+    virtual std::any visitGgll_expression(MXParser::Ggll_expressionContext *context) = 0;
+
+    virtual std::any visitBxor_expression(MXParser::Bxor_expressionContext *context) = 0;
+
+    virtual std::any visitSuffix_expression(MXParser::Suffix_expressionContext *context) = 0;
+
+    virtual std::any visitLand_expression(MXParser::Land_expressionContext *context) = 0;
+
+    virtual std::any visitPm_expression(MXParser::Pm_expressionContext *context) = 0;
+
+    virtual std::any visitIndex_expression(MXParser::Index_expressionContext *context) = 0;
+
+    virtual std::any visitOpposite_expression(MXParser::Opposite_expressionContext *context) = 0;
+
+    virtual std::any visitNew_array_expression(MXParser::New_array_expressionContext *context) = 0;
+
+    virtual std::any visitBasic_expression(MXParser::Basic_expressionContext *context) = 0;
+
+    virtual std::any visitAccess_expression(MXParser::Access_expressionContext *context) = 0;
+
+    virtual std::any visitBand_expression(MXParser::Band_expressionContext *context) = 0;
+
+    virtual std::any visitNew_construct_expression(MXParser::New_construct_expressionContext *context) = 0;
+
+    virtual std::any visitTernary_expression(MXParser::Ternary_expressionContext *context) = 0;
+
+    virtual std::any visitBnot_expression(MXParser::Bnot_expressionContext *context) = 0;
+
+    virtual std::any visitLnot_expression(MXParser::Lnot_expressionContext *context) = 0;
+
+    virtual std::any visitPrefix_expression(MXParser::Prefix_expressionContext *context) = 0;
+
+    virtual std::any visitRl_expression(MXParser::Rl_expressionContext *context) = 0;
+
+    virtual std::any visitAssign_expression(MXParser::Assign_expressionContext *context) = 0;
+
+    virtual std::any visitMdm_expression(MXParser::Mdm_expressionContext *context) = 0;
+
+    virtual std::any visitNew_expression(MXParser::New_expressionContext *context) = 0;
+
+    virtual std::any visitNe_expression(MXParser::Ne_expressionContext *context) = 0;
+
+    virtual std::any visitBor_expression(MXParser::Bor_expressionContext *context) = 0;
+
+    virtual std::any visitLor_expression(MXParser::Lor_expressionContext *context) = 0;
 
     virtual std::any visitBasic_expr(MXParser::Basic_exprContext *context) = 0;
 

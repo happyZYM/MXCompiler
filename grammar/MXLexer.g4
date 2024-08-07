@@ -72,7 +72,7 @@ ID: [a-zA-Z][a-zA-Z_0-9]*;
 // Literals
 INT_LITERAL: [0-9]+;
 STRING_LITERAL: '"' (ESC|~["\\])*? '"';
-fragment ESC : '\\"' | '\\\\';
+fragment ESC : '\\n'| '\\"' | '\\\\';
 
 // Whitespace and comments
 WS: [ \t\r\n]+ -> skip;
