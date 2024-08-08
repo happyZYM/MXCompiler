@@ -2660,59 +2660,137 @@ MXParser::Basic_exprContext::Basic_exprContext(ParserRuleContext *parent, size_t
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* MXParser::Basic_exprContext::THIS() {
-  return getToken(MXParser::THIS, 0);
-}
-
-tree::TerminalNode* MXParser::Basic_exprContext::LPAREN() {
-  return getToken(MXParser::LPAREN, 0);
-}
-
-std::vector<MXParser::ExprContext *> MXParser::Basic_exprContext::expr() {
-  return getRuleContexts<MXParser::ExprContext>();
-}
-
-MXParser::ExprContext* MXParser::Basic_exprContext::expr(size_t i) {
-  return getRuleContext<MXParser::ExprContext>(i);
-}
-
-tree::TerminalNode* MXParser::Basic_exprContext::RPAREN() {
-  return getToken(MXParser::RPAREN, 0);
-}
-
-tree::TerminalNode* MXParser::Basic_exprContext::ID() {
-  return getToken(MXParser::ID, 0);
-}
-
-std::vector<tree::TerminalNode *> MXParser::Basic_exprContext::COMMA() {
-  return getTokens(MXParser::COMMA);
-}
-
-tree::TerminalNode* MXParser::Basic_exprContext::COMMA(size_t i) {
-  return getToken(MXParser::COMMA, i);
-}
-
-MXParser::Formatted_stringContext* MXParser::Basic_exprContext::formatted_string() {
-  return getRuleContext<MXParser::Formatted_stringContext>(0);
-}
-
-MXParser::ConstantContext* MXParser::Basic_exprContext::constant() {
-  return getRuleContext<MXParser::ConstantContext>(0);
-}
-
 
 size_t MXParser::Basic_exprContext::getRuleIndex() const {
   return MXParser::RuleBasic_expr;
 }
 
+void MXParser::Basic_exprContext::copyFrom(Basic_exprContext *ctx) {
+  ParserRuleContext::copyFrom(ctx);
+}
 
-std::any MXParser::Basic_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+//----------------- Paren_exprContext ------------------------------------------------------------------
+
+tree::TerminalNode* MXParser::Paren_exprContext::LPAREN() {
+  return getToken(MXParser::LPAREN, 0);
+}
+
+MXParser::ExprContext* MXParser::Paren_exprContext::expr() {
+  return getRuleContext<MXParser::ExprContext>(0);
+}
+
+tree::TerminalNode* MXParser::Paren_exprContext::RPAREN() {
+  return getToken(MXParser::RPAREN, 0);
+}
+
+MXParser::Paren_exprContext::Paren_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::Paren_exprContext::accept(tree::ParseTreeVisitor *visitor) {
   if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
-    return parserVisitor->visitBasic_expr(this);
+    return parserVisitor->visitParen_expr(this);
   else
     return visitor->visitChildren(this);
 }
+//----------------- Constant_exprContext ------------------------------------------------------------------
 
+MXParser::ConstantContext* MXParser::Constant_exprContext::constant() {
+  return getRuleContext<MXParser::ConstantContext>(0);
+}
+
+MXParser::Constant_exprContext::Constant_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::Constant_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
+    return parserVisitor->visitConstant_expr(this);
+  else
+    return visitor->visitChildren(this);
+}
+//----------------- This_exprContext ------------------------------------------------------------------
+
+tree::TerminalNode* MXParser::This_exprContext::THIS() {
+  return getToken(MXParser::THIS, 0);
+}
+
+MXParser::This_exprContext::This_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::This_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
+    return parserVisitor->visitThis_expr(this);
+  else
+    return visitor->visitChildren(this);
+}
+//----------------- Id_exprContext ------------------------------------------------------------------
+
+tree::TerminalNode* MXParser::Id_exprContext::ID() {
+  return getToken(MXParser::ID, 0);
+}
+
+MXParser::Id_exprContext::Id_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::Id_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
+    return parserVisitor->visitId_expr(this);
+  else
+    return visitor->visitChildren(this);
+}
+//----------------- Formatted_string_exprContext ------------------------------------------------------------------
+
+MXParser::Formatted_stringContext* MXParser::Formatted_string_exprContext::formatted_string() {
+  return getRuleContext<MXParser::Formatted_stringContext>(0);
+}
+
+MXParser::Formatted_string_exprContext::Formatted_string_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::Formatted_string_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
+    return parserVisitor->visitFormatted_string_expr(this);
+  else
+    return visitor->visitChildren(this);
+}
+//----------------- Function_call_exprContext ------------------------------------------------------------------
+
+tree::TerminalNode* MXParser::Function_call_exprContext::ID() {
+  return getToken(MXParser::ID, 0);
+}
+
+tree::TerminalNode* MXParser::Function_call_exprContext::LPAREN() {
+  return getToken(MXParser::LPAREN, 0);
+}
+
+tree::TerminalNode* MXParser::Function_call_exprContext::RPAREN() {
+  return getToken(MXParser::RPAREN, 0);
+}
+
+std::vector<MXParser::ExprContext *> MXParser::Function_call_exprContext::expr() {
+  return getRuleContexts<MXParser::ExprContext>();
+}
+
+MXParser::ExprContext* MXParser::Function_call_exprContext::expr(size_t i) {
+  return getRuleContext<MXParser::ExprContext>(i);
+}
+
+std::vector<tree::TerminalNode *> MXParser::Function_call_exprContext::COMMA() {
+  return getTokens(MXParser::COMMA);
+}
+
+tree::TerminalNode* MXParser::Function_call_exprContext::COMMA(size_t i) {
+  return getToken(MXParser::COMMA, i);
+}
+
+MXParser::Function_call_exprContext::Function_call_exprContext(Basic_exprContext *ctx) { copyFrom(ctx); }
+
+
+std::any MXParser::Function_call_exprContext::accept(tree::ParseTreeVisitor *visitor) {
+  if (auto parserVisitor = dynamic_cast<MXParserVisitor*>(visitor))
+    return parserVisitor->visitFunction_call_expr(this);
+  else
+    return visitor->visitChildren(this);
+}
 MXParser::Basic_exprContext* MXParser::basic_expr() {
   Basic_exprContext *_localctx = _tracker.createInstance<Basic_exprContext>(_ctx, getState());
   enterRule(_localctx, 18, MXParser::RuleBasic_expr);
@@ -2730,6 +2808,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx)) {
     case 1: {
+      _localctx = _tracker.createInstance<MXParser::This_exprContext>(_localctx);
       enterOuterAlt(_localctx, 1);
       setState(306);
       match(MXParser::THIS);
@@ -2737,6 +2816,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     }
 
     case 2: {
+      _localctx = _tracker.createInstance<MXParser::Paren_exprContext>(_localctx);
       enterOuterAlt(_localctx, 2);
       setState(307);
       match(MXParser::LPAREN);
@@ -2748,6 +2828,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     }
 
     case 3: {
+      _localctx = _tracker.createInstance<MXParser::Id_exprContext>(_localctx);
       enterOuterAlt(_localctx, 3);
       setState(311);
       match(MXParser::ID);
@@ -2755,6 +2836,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     }
 
     case 4: {
+      _localctx = _tracker.createInstance<MXParser::Function_call_exprContext>(_localctx);
       enterOuterAlt(_localctx, 4);
       setState(312);
       match(MXParser::ID);
@@ -2787,6 +2869,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     }
 
     case 5: {
+      _localctx = _tracker.createInstance<MXParser::Formatted_string_exprContext>(_localctx);
       enterOuterAlt(_localctx, 5);
       setState(325);
       formatted_string();
@@ -2794,6 +2877,7 @@ MXParser::Basic_exprContext* MXParser::basic_expr() {
     }
 
     case 6: {
+      _localctx = _tracker.createInstance<MXParser::Constant_exprContext>(_localctx);
       enterOuterAlt(_localctx, 6);
       setState(326);
       constant();

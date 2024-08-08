@@ -95,7 +95,17 @@ public:
 
     virtual std::any visitLor_expression(MXParser::Lor_expressionContext *context) = 0;
 
-    virtual std::any visitBasic_expr(MXParser::Basic_exprContext *context) = 0;
+    virtual std::any visitThis_expr(MXParser::This_exprContext *context) = 0;
+
+    virtual std::any visitParen_expr(MXParser::Paren_exprContext *context) = 0;
+
+    virtual std::any visitId_expr(MXParser::Id_exprContext *context) = 0;
+
+    virtual std::any visitFunction_call_expr(MXParser::Function_call_exprContext *context) = 0;
+
+    virtual std::any visitFormatted_string_expr(MXParser::Formatted_string_exprContext *context) = 0;
+
+    virtual std::any visitConstant_expr(MXParser::Constant_exprContext *context) = 0;
 
     virtual std::any visitFormatted_string(MXParser::Formatted_stringContext *context) = 0;
 

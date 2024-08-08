@@ -610,21 +610,76 @@ public:
   class  Basic_exprContext : public antlr4::ParserRuleContext {
   public:
     Basic_exprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *THIS();
-    antlr4::tree::TerminalNode *LPAREN();
-    std::vector<ExprContext *> expr();
-    ExprContext* expr(size_t i);
-    antlr4::tree::TerminalNode *RPAREN();
-    antlr4::tree::TerminalNode *ID();
-    std::vector<antlr4::tree::TerminalNode *> COMMA();
-    antlr4::tree::TerminalNode* COMMA(size_t i);
-    Formatted_stringContext *formatted_string();
-    ConstantContext *constant();
+   
+    Basic_exprContext() = default;
+    void copyFrom(Basic_exprContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
 
+    virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  Paren_exprContext : public Basic_exprContext {
+  public:
+    Paren_exprContext(Basic_exprContext *ctx);
+
+    antlr4::tree::TerminalNode *LPAREN();
+    ExprContext *expr();
+    antlr4::tree::TerminalNode *RPAREN();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
+  };
+
+  class  Constant_exprContext : public Basic_exprContext {
+  public:
+    Constant_exprContext(Basic_exprContext *ctx);
+
+    ConstantContext *constant();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  This_exprContext : public Basic_exprContext {
+  public:
+    This_exprContext(Basic_exprContext *ctx);
+
+    antlr4::tree::TerminalNode *THIS();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Id_exprContext : public Basic_exprContext {
+  public:
+    Id_exprContext(Basic_exprContext *ctx);
+
+    antlr4::tree::TerminalNode *ID();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Formatted_string_exprContext : public Basic_exprContext {
+  public:
+    Formatted_string_exprContext(Basic_exprContext *ctx);
+
+    Formatted_stringContext *formatted_string();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  Function_call_exprContext : public Basic_exprContext {
+  public:
+    Function_call_exprContext(Basic_exprContext *ctx);
+
+    antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *LPAREN();
+    antlr4::tree::TerminalNode *RPAREN();
+    std::vector<ExprContext *> expr();
+    ExprContext* expr(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> COMMA();
+    antlr4::tree::TerminalNode* COMMA(size_t i);
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
   Basic_exprContext* basic_expr();

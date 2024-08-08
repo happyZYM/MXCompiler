@@ -52,12 +52,12 @@ expr
     ;
 
 basic_expr
-    : THIS
-    | LPAREN expr RPAREN
-    | ID
-    | ID LPAREN (expr (COMMA expr)*)? RPAREN
-    | formatted_string
-    | constant
+    : THIS #this_expr
+    | LPAREN expr RPAREN #paren_expr
+    | ID #id_expr
+    | ID LPAREN (expr (COMMA expr)*)? RPAREN #function_call_expr
+    | formatted_string #formatted_string_expr
+    | constant #constant_expr
     ;
 
 formatted_string : FORMAT_STRING_WHOLE | (FORMAT_STRING_HEAD expr (FORMAT_STRING_BODY expr)*? FORMAT_STRING_TAIL);

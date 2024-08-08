@@ -1,3 +1,4 @@
+add_subdirectory(ast)
 add_subdirectory(semantic)
 add_executable(code main.cpp)
 target_link_libraries(code semantic argparse)
