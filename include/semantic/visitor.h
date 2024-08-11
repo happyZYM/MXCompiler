@@ -1,9 +1,13 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
+#include <stack>
+#include <vector>
 #include "MXParserVisitor.h"
-
+#include "tools.h"
 class Visitor : public MXParserVisitor {
+  std::vector<ASTNodeType> nodetype_stk;
+
  public:
   std::any visitMxprog(MXParser::MxprogContext *context) override;
   std::any visitFunction_def(MXParser::Function_defContext *context) override;

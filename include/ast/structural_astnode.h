@@ -7,21 +7,35 @@
 #include "expr_astnode.h"
 #include "statement_astnode.h"
 class FuncDef_ASTNode : public ASTNodeBase {
+  friend Visitor;
+  bool is_constructor;
   IdentifierType func_name;
+  ExprTypeInfo return_type;
   std::vector<std::pair<IdentifierType, ExprTypeInfo>> params;
   std::shared_ptr<SuiteStatement_ASTNode> func_body;
+
+ public:
+  FuncDef_ASTNode() = default;
 };
-class Constructor_ASTNode : public FuncDef_ASTNode {};
-class ClassVariable_ASTNode : public DefinitionStatement_ASTNode {};
 class ClassDef_ASTNode : public ASTNodeBase {
+  friend Visitor;
+
  private:
-  using ClassElement = std::variant<std::shared_ptr<Constructor_ASTNode>, std::shared_ptr<ClassVariable_ASTNode>,
-                                    std::shared_ptr<FuncDef_ASTNode>>;
-  std::vector<ClassElement> elements;
+  std::string class_name;
+  std::vector<std::shared_ptr<DefinitionStatement_ASTNode>> member_variables;
+  std::vector<std::shared_ptr<FuncDef_ASTNode>> member_functions;
+  std::shared_ptr<FuncDef_ASTNode> constructor;
+
+ public:
+  ClassDef_ASTNode() = default;
 };
 class Program_ASTNode : public ASTNodeBase {
-  using ProgramElement = std::variant<std::shared_ptr<FuncDef_ASTNode>, std::shared_ptr<ClassDef_ASTNode>,
-                                      std::shared_ptr<DefinitionStatement_ASTNode>>;
-  std::vector<ProgramElement> elements;
+  friend Visitor;
+  std::vector<std::shared_ptr<DefinitionStatement_ASTNode>> global_variables;
+  std::vector<std::shared_ptr<ClassDef_ASTNode>> classes;
+  std::vector<std::shared_ptr<FuncDef_ASTNode>> functions;
+
+ public:
+  Program_ASTNode() = default;
 };
 #endif
