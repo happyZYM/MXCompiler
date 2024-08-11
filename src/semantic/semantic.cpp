@@ -19,12 +19,12 @@ class MXErrorListener : public antlr4::BaseErrorListener {
   }
   bool IsOk() { return no_problem; }
 };
-std::shared_ptr<ASTNodeBase> BuildAST(Visitor *visitor, antlr4::tree::ParseTree *tree) {
+std::shared_ptr<Program_ASTNode> BuildAST(Visitor *visitor, antlr4::tree::ParseTree *tree) {
   return std::any_cast<std::shared_ptr<Program_ASTNode>>(visitor->visit(tree));
 }
-std::shared_ptr<ASTNodeBase> CheckAndDecorate(std::shared_ptr<ASTNodeBase> src) { ; }
+std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src) { return nullptr; }
 
-void SemanticCheck(std::istream &fin, std::shared_ptr<ASTNodeBase> &ast_out) {
+void SemanticCheck(std::istream &fin, std::shared_ptr<Program_ASTNode> &ast_out) {
   antlr4::ANTLRInputStream input(fin);
   MXLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
@@ -36,6 +36,6 @@ void SemanticCheck(std::istream &fin, std::shared_ptr<ASTNodeBase> &ast_out) {
   antlr4::tree::ParseTree *tree = parser.mxprog();
   if (!error_listener.IsOk()) throw SemanticError("Fatal error: syntax error", 1);
   Visitor visitor;
-  std::shared_ptr<ASTNodeBase> ast = BuildAST(&visitor, tree);
+  std::shared_ptr<Program_ASTNode> ast = BuildAST(&visitor, tree);
   ast_out = CheckAndDecorate(ast);
 }

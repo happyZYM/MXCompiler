@@ -41,6 +41,7 @@ class ForStatement_ASTNode : public Statement_ASTNode {
 };
 class JmpStatement_ASTNode : public Statement_ASTNode {
   friend Visitor;
+  uint8_t jmp_type;  // 0: return, 1: break, 2: continue
   std::shared_ptr<Expr_ASTNode> return_value;
 };
 class SuiteStatement_ASTNode : public Statement_ASTNode {

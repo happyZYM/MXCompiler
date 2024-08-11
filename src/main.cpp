@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   auto input_file = program.get<std::string>("input");
   auto output_file = program.get<std::string>("output");
   std::ifstream fin(input_file);
-  std::shared_ptr<ASTNodeBase> ast;
+  std::shared_ptr<Program_ASTNode> ast;
   try {
     SemanticCheck(fin, ast);
   } catch (const SemanticError &err) {

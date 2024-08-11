@@ -27,7 +27,7 @@ statement
 define_statement : type (LBRACKET RBRACKET)* ID (ASSIGN expr)? (COMMA ID (ASSIGN expr)?)* SEMICOLON;
 expr
     : basic_expr #basic_expression
-    | NEW type (LBRACKET expr? RBRACKET)*constant? #new_array_expression
+    | NEW type (LBRACKET expr? RBRACKET)+constant? #new_array_expression
     | NEW type LPAREN RPAREN #new_construct_expression
     | NEW type #new_expression
     | expr DOT (ID|(ID LPAREN (expr (COMMA expr)*)? RPAREN)) #access_expression

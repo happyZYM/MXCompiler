@@ -6,6 +6,7 @@
 #include "astnode.h"
 
 class Expr_ASTNode : public ASTNodeBase {
+  friend Visitor;
   ExprTypeInfo expr_type_info;
 
  public:
@@ -16,6 +17,7 @@ class BasicExpr_ASTNode : public Expr_ASTNode {};  // This is a virtual class
 class NewArrayExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   bool has_initial_value;
+  std::vector<std::shared_ptr<Expr_ASTNode>> dim_size;
   std::shared_ptr<class ConstantExpr_ASTNode> initial_value;
 };
 class NewConstructExpr_ASTNode : public Expr_ASTNode {
@@ -28,12 +30,7 @@ class AccessExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   std::shared_ptr<Expr_ASTNode> base;
   IdentifierType member;
-};
-class MemberVariableAccessExpr_ASTNode : public AccessExpr_ASTNode {
-  friend Visitor;
-};
-class MemberFunctionAccessExpr_ASTNode : public AccessExpr_ASTNode {
-  friend Visitor;
+  bool is_function;
   std::vector<std::shared_ptr<Expr_ASTNode>> arguments;
 };
 class IndexExpr_ASTNode : public Expr_ASTNode {
@@ -43,10 +40,12 @@ class IndexExpr_ASTNode : public Expr_ASTNode {
 };
 class SuffixExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> base;
 };
 class PrefixExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> base;
 };
 class OppositeExpr_ASTNode : public Expr_ASTNode {
@@ -55,61 +54,69 @@ class OppositeExpr_ASTNode : public Expr_ASTNode {
 };
 class LNotExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
-  std::shared_ptr<Expr_ASTNode> left;
-  std::shared_ptr<Expr_ASTNode> right;
+  std::shared_ptr<Expr_ASTNode> base;
 };
 class BNotExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
-  std::shared_ptr<Expr_ASTNode> left;
-  std::shared_ptr<Expr_ASTNode> right;
+  std::shared_ptr<Expr_ASTNode> base;
 };
 class MDMExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class PMExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class RLExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class GGLLExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class NEExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class BAndExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class BXorExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class BOrExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class LAndExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
 class LOrExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
 };
@@ -121,6 +128,7 @@ class TernaryExpr_ASTNode : public Expr_ASTNode {
 };
 class AssignExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
+  std::string op;
   std::shared_ptr<Expr_ASTNode> dest;
   std::shared_ptr<Expr_ASTNode> src;
 };
@@ -143,8 +151,8 @@ class FunctionCallExpr_ASTNode : public BasicExpr_ASTNode {
 };
 class FormattedStringExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
-  using SegmentType = std::variant<std::string, std::shared_ptr<Expr_ASTNode>>;
-  std::vector<SegmentType> segments;
+  std::vector<std::string> literals;
+  std::vector<std::shared_ptr<Expr_ASTNode>> exprs;
 };
 struct NullType {};
 using AtomicConstantType = std::variant<uint32_t, bool, std::string, NullType>;
