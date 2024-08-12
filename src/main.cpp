@@ -4,7 +4,7 @@
 #include "semantic/semantic.h"
 
 int main(int argc, char **argv) {
-  argparse::ArgumentParser program("mxcompiler");
+  argparse::ArgumentParser program("zmxcc");
 
   program.add_argument("input").help("input file path").required();
 

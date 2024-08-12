@@ -207,8 +207,7 @@ public:
     antlr4::tree::TerminalNode* SEMICOLON(size_t i);
     antlr4::tree::TerminalNode *RPAREN();
     StatementContext *statement();
-    std::vector<Define_statementContext *> define_statement();
-    Define_statementContext* define_statement(size_t i);
+    Define_statementContext *define_statement();
     std::vector<ExprContext *> expr();
     ExprContext* expr(size_t i);
 

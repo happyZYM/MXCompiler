@@ -20,7 +20,7 @@ statement
     | expr SEMICOLON #expr_statement
     | IF LPAREN expr RPAREN statement (ELSE statement)? #if_statement
     | WHILE LPAREN expr RPAREN statement #while_statement
-    | FOR LPAREN (define_statement|(expr SEMICOLON)|SEMICOLON) expr? SEMICOLON (define_statement|expr)? RPAREN statement #for_statement
+    | FOR LPAREN (define_statement|(expr SEMICOLON)|SEMICOLON) expr? SEMICOLON expr? RPAREN statement #for_statement
     | (BREAK|CONTINUE|(RETURN expr?)) SEMICOLON #jmp_statement
     | suite #suite_statement
     ;

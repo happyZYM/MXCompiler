@@ -156,14 +156,10 @@ class FormattedStringExpr_ASTNode : public BasicExpr_ASTNode {
 };
 struct NullType {};
 using AtomicConstantType = std::variant<uint32_t, bool, std::string, NullType>;
-struct ArrayConstantType {
-  friend Visitor;
-  std::vector<std::variant<std::shared_ptr<ArrayConstantType>, NullType, AtomicConstantType>> elements;
-  size_t level;
-};
 class ConstantExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
-  std::variant<AtomicConstantType, ArrayConstantType> value;
+  size_t level;
+  std::variant<AtomicConstantType, std::vector<std::shared_ptr<ConstantExpr_ASTNode>>> value;
 };
 
 #endif  // EXPR_ASTNODE_H

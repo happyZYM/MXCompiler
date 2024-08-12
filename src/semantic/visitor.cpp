@@ -207,6 +207,7 @@ std::any Visitor::visitClass_constructor(MXParser::Class_constructorContext *con
 
   construct_func->func_body = std::dynamic_pointer_cast<SuiteStatement_ASTNode>(
       std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->suite())));
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "constructor body visited" << std::endl;
 
   nodetype_stk.pop_back();
   return construct_func;
@@ -219,6 +220,7 @@ std::any Visitor::visitSuite(MXParser::SuiteContext *context) {
   suite_node->end_line = context->getStop()->getLine();
   suite_node->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::SuiteStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding suite statements" << std::endl;
 
   std::vector<MXParser::StatementContext *> stmts = context->statement();
   for (auto stmt : stmts) {
@@ -249,6 +251,7 @@ std::any Visitor::visitExpr_statement(MXParser::Expr_statementContext *context) 
   expr_stmt->end_line = context->getStop()->getLine();
   expr_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::ExprStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding an expression statement" << std::endl;
   expr_stmt->expr = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->expr()));
   nodetype_stk.pop_back();
   return std::static_pointer_cast<Statement_ASTNode>(expr_stmt);
@@ -261,6 +264,7 @@ std::any Visitor::visitIf_statement(MXParser::If_statementContext *context) {
   if_stmt->end_line = context->getStop()->getLine();
   if_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::IfStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding an if statement" << std::endl;
   if_stmt->condition = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->expr()));
   std::vector<MXParser::StatementContext *> sub_stmts = context->statement();
   if_stmt->if_clause = std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(sub_stmts[0]));
@@ -282,6 +286,7 @@ std::any Visitor::visitWhile_statement(MXParser::While_statementContext *context
   while_stmt->end_line = context->getStop()->getLine();
   while_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::WhileStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a while statement" << std::endl;
   while_stmt->condition = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->expr()));
   while_stmt->loop_body = std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->statement()));
   nodetype_stk.pop_back();
@@ -295,16 +300,19 @@ std::any Visitor::visitFor_statement(MXParser::For_statementContext *context) {
   for_stmt->end_line = context->getStop()->getLine();
   for_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::ForStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a for statement" << std::endl;
   size_t cur = 2;
   if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[cur]) != nullptr &&
       dynamic_cast<antlr4::tree::TerminalNode *>(context->children[cur])->getSymbol()->getType() ==
           MXParser::SEMICOLON) {
     for_stmt->initial = nullptr;
     cur += 1;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "initial is empty" << std::endl;
   } else if (dynamic_cast<MXParser::Define_statementContext *>(context->children[cur]) != nullptr) {
     for_stmt->initial = std::dynamic_pointer_cast<Statement_ASTNode>(
         std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->children[cur])));
     cur += 1;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "initial is a define statement" << std::endl;
   } else if (dynamic_cast<MXParser::ExprContext *>(context->children[cur]) != nullptr) {
     auto expr = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->children[cur]));
     auto expr_stmt = std::make_shared<ExprStatement_ASTNode>();
@@ -316,6 +324,7 @@ std::any Visitor::visitFor_statement(MXParser::For_statementContext *context) {
     expr_stmt->expr = expr;
     for_stmt->initial = std::static_pointer_cast<Statement_ASTNode>(expr_stmt);
     cur += 2;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "initial is an expression statement" << std::endl;
   } else {
     throw std::runtime_error("unknown subnode occurred in visitFor_statement");
   }
@@ -324,15 +333,13 @@ std::any Visitor::visitFor_statement(MXParser::For_statementContext *context) {
           MXParser::SEMICOLON) {
     for_stmt->condition = nullptr;
     cur += 1;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "condition is empty" << std::endl;
   } else {
     for_stmt->condition = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->children[cur]));
     cur += 2;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "condition is an expression" << std::endl;
   }
-  if (dynamic_cast<MXParser::Define_statementContext *>(context->children[cur]) != nullptr) {
-    for_stmt->update = std::dynamic_pointer_cast<Statement_ASTNode>(
-        std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->children[cur])));
-    cur += 1;
-  } else if (dynamic_cast<MXParser::ExprContext *>(context->children[cur]) != nullptr) {
+  if (dynamic_cast<MXParser::ExprContext *>(context->children[cur]) != nullptr) {
     auto expr = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->children[cur]));
     auto expr_stmt = std::make_shared<ExprStatement_ASTNode>();
     expr_stmt->type = ASTNodeType::ExprStatement;
@@ -343,10 +350,17 @@ std::any Visitor::visitFor_statement(MXParser::For_statementContext *context) {
     expr_stmt->expr = expr;
     for_stmt->update = std::static_pointer_cast<Statement_ASTNode>(expr_stmt);
     cur += 2;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "update is an expression statement" << std::endl;
+  } else if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[cur]) != nullptr &&
+             dynamic_cast<antlr4::tree::TerminalNode *>(context->children[cur])->getSymbol()->getType() ==
+                 MXParser::RPAREN) {
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "update is empty" << std::endl;
+    for_stmt->update = nullptr;
+    cur += 1;
   } else {
     throw std::runtime_error("unknown subnode occurred in visitFor_statement");
   }
-  for_stmt->loop_body = std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->children[cur]));
+  for_stmt->loop_body = std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->statement()));
   nodetype_stk.pop_back();
   return std::static_pointer_cast<Statement_ASTNode>(for_stmt);
 }
@@ -358,6 +372,7 @@ std::any Visitor::visitJmp_statement(MXParser::Jmp_statementContext *context) {
   jmp_stmt->end_line = context->getStop()->getLine();
   jmp_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::JmpStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a jmp statement" << std::endl;
   if (context->RETURN() != nullptr) {
     jmp_stmt->jmp_type = 0;
     if (context->expr() != nullptr) {
@@ -387,6 +402,7 @@ std::any Visitor::visitDefine_statement(MXParser::Define_statementContext *conte
   def_stmt->end_line = context->getStop()->getLine();
   def_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::DefinitionStatement);
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a definition statement" << std::endl;
   std::string define_type_base;
   if (auto type_context = dynamic_cast<MXParser::TypeContext *>(context->children[0])) {
     define_type_base = type_context->getText();
@@ -403,12 +419,12 @@ std::any Visitor::visitDefine_statement(MXParser::Define_statementContext *conte
   define_dimensions >>= 1;
   if (define_dimensions == 0) {
     def_stmt->var_type = define_type_base;
-    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded member variable type is [none-array]"
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded variable type is [none-array]"
               << define_type_base << std::endl;
   } else {
     def_stmt->var_type = ArrayType{true, define_type_base, static_cast<size_t>(define_dimensions)};
-    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded member variable type is [array]"
-              << define_type_base << " with dimensions=" << define_dimensions << std::endl;
+    std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded variable type is [array]" << define_type_base
+              << " with dimensions=" << define_dimensions << std::endl;
   }
   for (size_t i = 1 + 2 * define_dimensions; i < context->children.size();) {
     if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i]) != nullptr &&
@@ -539,6 +555,7 @@ std::any Visitor::visitNew_array_expression(MXParser::New_array_expressionContex
   new_array->end_char_pos = context->getStop()->getCharPositionInLine();
   nodetype_stk.push_back(ASTNodeType::NewArrayExpr);
 
+  std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a new array expression" << std::endl;
   size_t total_dimensions = context->LBRACKET().size();
   std::string base_type = context->type()->getText();
   new_array->expr_type_info = ArrayType{true, base_type, total_dimensions};
@@ -548,10 +565,11 @@ std::any Visitor::visitNew_array_expression(MXParser::New_array_expressionContex
     if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i]) != nullptr &&
         dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i])->getSymbol()->getType() ==
             MXParser::RBRACKET) {
+      total_dim_count++;
     } else if (dynamic_cast<MXParser::ExprContext *>(context->children[i]) != nullptr) {
       new_array->dim_size[total_dim_count] = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->children[i]));
+      std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "dim " << total_dim_count << " has size " << std::endl;
     }
-    total_dim_count++;
   }
   if (context->constant() != nullptr) {
     new_array->has_initial_value = true;
@@ -831,7 +849,7 @@ std::any Visitor::visitFormatted_string(MXParser::Formatted_stringContext *conte
     auto expr_subnodes = context->expr();
     auto body_subnodes = context->FORMAT_STRING_BODY();
     fmt_expr->literals.push_back(context->FORMAT_STRING_HEAD()->getText());
-    for (size_t i = 0; i < expr_subnodes.size(); i++) {
+    for (size_t i = 0; i < body_subnodes.size(); i++) {
       fmt_expr->literals.push_back(body_subnodes[i]->getText());
     }
     fmt_expr->literals.push_back(context->FORMAT_STRING_TAIL()->getText());
@@ -844,8 +862,53 @@ std::any Visitor::visitFormatted_string(MXParser::Formatted_stringContext *conte
   return std::static_pointer_cast<Expr_ASTNode>(fmt_expr);
 }
 std::any Visitor::visitConstant(MXParser::ConstantContext *context) {
-  // TODO
-  throw std::runtime_error("Not implemented");
+  auto constant_expr = std::make_shared<ConstantExpr_ASTNode>();
+  constant_expr->type = ASTNodeType::ConstantExpr;
+  constant_expr->start_line = context->getStart()->getLine();
+  constant_expr->start_char_pos = context->getStart()->getCharPositionInLine();
+  constant_expr->end_line = context->getStop()->getLine();
+  constant_expr->end_char_pos = context->getStop()->getCharPositionInLine();
+  nodetype_stk.push_back(ASTNodeType::ConstantExpr);
+
+  if (context->TRUE() != nullptr || context->FALSE() != nullptr) {
+    constant_expr->expr_type_info = "bool";
+    if (context->TRUE())
+      constant_expr->value = true;
+    else
+      constant_expr->value = false;
+    constant_expr->level = 0;
+  } else if (context->INT_LITERAL() != nullptr) {
+    constant_expr->expr_type_info = "int";
+    constant_expr->value = static_cast<uint32_t>(std::stoull(context->INT_LITERAL()->getText()));
+    constant_expr->level = 0;
+  } else if (context->STRING_LITERAL() != nullptr) {
+    constant_expr->expr_type_info = "string";
+    constant_expr->value = context->STRING_LITERAL()->getText();
+    constant_expr->level = 0;
+  } else if (context->NULL_() != nullptr) {
+    constant_expr->expr_type_info = "null";
+    constant_expr->value = NullType();
+    constant_expr->level = 0;
+  } else if (context->LBRACE() != nullptr) {
+    // array constant
+    auto sub_constants = context->constant();
+    size_t max_sub_level = 0;
+    std::vector<std::shared_ptr<ConstantExpr_ASTNode>> tmp;
+    for (auto sub_constant : sub_constants) {
+      auto sub_constant_expr = std::dynamic_pointer_cast<ConstantExpr_ASTNode>(
+          std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(sub_constant)));
+      max_sub_level =
+          std::max(max_sub_level, std::dynamic_pointer_cast<ConstantExpr_ASTNode>(sub_constant_expr)->level);
+      tmp.push_back(sub_constant_expr);
+    }
+    constant_expr->value = std::move(tmp);
+    constant_expr->level = max_sub_level + 1;
+  } else {
+    throw std::runtime_error("unknown constant type");
+  }
+
+  nodetype_stk.pop_back();
+  return std::static_pointer_cast<Expr_ASTNode>(constant_expr);
 }
 std::any Visitor::visitType(MXParser::TypeContext *context) {
   throw std::runtime_error("Visitor::visitType should not be called");
