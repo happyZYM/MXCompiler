@@ -1,7 +1,9 @@
 /.devcontainer
 /.github
 /.vscode
+/makebuild
 /grammar/.antlr
 /build
 /.cache
 /.clang-format
+/dist
