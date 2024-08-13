@@ -6,13 +6,6 @@
 #include "../semantic/visitor.h"
 #include "scope.hpp"
 #include "tools.h"
-class ASTNodeVisitorBase {
-  friend Visitor;
-
- public:
-  virtual ~ASTNodeVisitorBase() = default;
-  virtual void visit(class ASTNodeBase *context) = 0;
-};
 
 class ASTNodeBase {
   friend Visitor;
@@ -26,6 +19,14 @@ class ASTNodeBase {
 
  public:
   virtual ~ASTNodeBase() = default;
-  // virtual void accept(class ASTNodeVisitorBase *visitor) = 0;
+  virtual void accept(class ASTNodeVisitorBase *visitor) = 0;
+};
+
+class ASTNodeVisitorBase {
+  friend Visitor;
+
+ public:
+  virtual ~ASTNodeVisitorBase() = default;
+  void visit(ASTNodeBase *context) { context->accept(this); }
 };
 #endif

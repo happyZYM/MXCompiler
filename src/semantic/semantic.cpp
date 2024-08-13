@@ -4,6 +4,7 @@
 #include "MXParser.h"
 #include "antlr4-runtime.h"
 #include "ast/ast.h"
+#include "ast/astnode_visitor.h"
 #include "visitor.h"
 
 class MXErrorListener : public antlr4::BaseErrorListener {
@@ -33,6 +34,8 @@ std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNod
       throw SemanticError("main() function should be int main()", 1);
     }
   }
+  ASTSemanticCheckVisitor visitor;
+  visitor.visit(src.get());
   return src;
 }
 

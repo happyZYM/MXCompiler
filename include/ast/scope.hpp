@@ -13,6 +13,7 @@ class ScopeBase {
   friend class FunctionScope;
   friend class ClassDefScope;
   friend class GlobalScope;
+  friend class ASTSemanticCheckVisitor;
 
  protected:
   ScopeBase *parent;  // cannot use std::shared_ptr<ScopeBase> because of circular dependency
@@ -118,8 +119,10 @@ class ClassDefScope : public ScopeBase {
         return false;
       }
     }
-    if (member_functions.find(name) != member_functions.end()) {
-      return false;
+    if (ttl == 0) {
+      if (member_functions.find(name) != member_functions.end()) {
+        return false;
+      }
     }
     return parent->VariableNameAvailable(name, ttl + 1);
   }

@@ -22,13 +22,16 @@ std::any Visitor::visitMxprog(MXParser::MxprogContext *context) {
     if (auto classDefContext = dynamic_cast<MXParser::Class_defContext *>(def)) {
       auto classNode = std::any_cast<std::shared_ptr<ClassDef_ASTNode>>(visit(classDefContext));
       program->classes.push_back(classNode);
+      program->sorted_children.push_back(classNode);
     } else if (auto defineStmtContext = dynamic_cast<MXParser::Define_statementContext *>(def)) {
       auto defineNode = std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(
           std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(defineStmtContext)));
       program->global_variables.push_back(defineNode);
+      program->sorted_children.push_back(defineNode);
     } else if (auto funcDefContext = dynamic_cast<MXParser::Function_defContext *>(def)) {
       auto funcNode = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(funcDefContext));
       program->functions.push_back(funcNode);
+      program->sorted_children.push_back(funcNode);
     } else if (auto EOFToken = dynamic_cast<antlr4::tree::TerminalNode *>(def)) {
       if (EOFToken == context->EOF()) break;
       throw std::runtime_error("unknown subnode occurred in visitMxprog");
@@ -160,20 +163,38 @@ std::any Visitor::visitClass_def(MXParser::Class_defContext *context) {
   class_def->class_name = context->ID()->getText();
   std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "building a class named " << class_def->class_name
             << std::endl;
-  std::vector<MXParser::Class_constructorContext *> constructors = context->class_constructor();
-  if (constructors.size() > 1) throw SemanticError("Multiple constructor found for class " + class_def->class_name, 2);
-  if (constructors.size() > 0)
-    class_def->constructor = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(constructors[0]));
-  std::vector<MXParser::Function_defContext *> functions = context->function_def();
-  for (auto func : functions) {
-    auto func_node = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(func));
-    class_def->member_functions.push_back(func_node);
-  }
-  std::vector<MXParser::Class_var_defContext *> vars = context->class_var_def();
-  for (auto var : vars) {
-    auto var_node = std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(
-        std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(var)));
-    class_def->member_variables.push_back(var_node);
+  // std::vector<MXParser::Class_constructorContext *> constructors = context->class_constructor();
+  if (context->class_constructor().size() > 1)
+    throw SemanticError("Multiple constructor found for class " + class_def->class_name, 2);
+  // if (constructors.size() > 0)
+  //   class_def->constructor = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(constructors[0]));
+  // std::vector<MXParser::Function_defContext *> functions = context->function_def();
+  // for (auto func : functions) {
+  //   auto func_node = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(func));
+  //   class_def->member_functions.push_back(func_node);
+  // }
+  // std::vector<MXParser::Class_var_defContext *> vars = context->class_var_def();
+  // for (auto var : vars) {
+  //   auto var_node = std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(
+  //       std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(var)));
+  //   class_def->member_variables.push_back(var_node);
+  // }
+  for (size_t i = 3; i < context->children.size(); i++) {
+    if (auto var_def_ctx = dynamic_cast<MXParser::Class_var_defContext *>(context->children[i])) {
+      auto var_node = std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(
+          std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->children[i])));
+      class_def->member_variables.push_back(var_node);
+      class_def->sorted_children.push_back(var_node);
+    } else if (auto constructor_ctx = dynamic_cast<MXParser::Class_constructorContext *>(context->children[i])) {
+      auto constructor_node = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(context->children[i]));
+      class_def->constructor = constructor_node;
+      class_def->sorted_children.push_back(constructor_node);
+    } else if (auto func_def_ctx = dynamic_cast<MXParser::Function_defContext *>(context->children[i])) {
+      auto func_node = std::any_cast<std::shared_ptr<FuncDef_ASTNode>>(visit(context->children[i]));
+      class_def->member_functions.push_back(func_node);
+      class_def->sorted_children.push_back(func_node);
+    } else
+      break;
   }
 
   nodetype_stk.pop_back();
@@ -217,9 +238,9 @@ std::any Visitor::visitClass_var_def(MXParser::Class_var_defContext *context) {
     member_var_def->vars.push_back(std::make_pair(id->getText(), nullptr));
     std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded member variable name is " << id->getText()
               << std::endl;
-    if (!member_var_def->current_scope->add_variable(id->getText(), member_var_def->var_type)) {
-      throw SemanticError("Variable name " + id->getText() + " is not available", 1);
-    }
+    // if (!member_var_def->current_scope->add_variable(id->getText(), member_var_def->var_type)) {
+    //   throw SemanticError("Variable name " + id->getText() + " is not available", 1);
+    // }
   }
 
   nodetype_stk.pop_back();
@@ -494,8 +515,8 @@ std::any Visitor::visitDefine_statement(MXParser::Define_statementContext *conte
     if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i]) != nullptr &&
         dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i])->getSymbol()->getType() == MXParser::ID) {
       def_stmt->vars.push_back(std::make_pair(context->children[i]->getText(), nullptr));
-      if (!def_stmt->current_scope->add_variable(context->children[i]->getText(), def_stmt->var_type))
-        throw SemanticError("Variable " + context->children[i]->getText() + " already defined", 1);
+      // if (!def_stmt->current_scope->add_variable(context->children[i]->getText(), def_stmt->var_type))
+      //   throw SemanticError("Variable " + context->children[i]->getText() + " already defined", 1);
     } else
       throw std::runtime_error("unknown subnode occurred in visitDefine_statement");
     i++;
