@@ -16,6 +16,7 @@ class ASTNodeVisitorBase {
 
 class ASTNodeBase {
   friend Visitor;
+  friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
 
  protected:
   std::shared_ptr<ScopeBase> current_scope;

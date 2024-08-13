@@ -32,6 +32,13 @@ class LocalScope : public ScopeBase {
     if (!VariableNameAvailable(name, 0)) {
       return false;
     }
+    if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
+      throw SemanticError("Variable cannot be void", 1);
+    }
+    if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
+        std::get<ArrayType>(type).basetype == "void") {
+      throw SemanticError("Variable cannot be void", 1);
+    }
     local_variables[name] = type;
     return true;
   }
@@ -53,6 +60,7 @@ struct FunctionSchema {
   std::vector<std::pair<ExprTypeInfo, std::string>> arguments;
 };
 class FunctionScope : public ScopeBase {
+  friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   friend class Visitor;
   FunctionSchema schema;
   bool add_variable([[maybe_unused]] const std::string &name, [[maybe_unused]] const ExprTypeInfo &type) override {
@@ -79,6 +87,13 @@ class ClassDefScope : public ScopeBase {
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
       return false;
+    }
+    if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
+      throw SemanticError("Variable cannot be void", 1);
+    }
+    if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
+        std::get<ArrayType>(type).basetype == "void") {
+      throw SemanticError("Variable cannot be void", 1);
     }
     member_variables[name] = type;
     return true;
@@ -111,6 +126,7 @@ class ClassDefScope : public ScopeBase {
 };
 class GlobalScope : public ScopeBase {
   friend class Visitor;
+  friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   std::unordered_map<std::string, ExprTypeInfo> global_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> global_functions;
   std::unordered_map<std::string, std::shared_ptr<ClassDefScope>> classes;
@@ -145,6 +161,13 @@ class GlobalScope : public ScopeBase {
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
       return false;
+    }
+    if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
+      throw SemanticError("Variable cannot be void", 1);
+    }
+    if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
+        std::get<ArrayType>(type).basetype == "void") {
+      throw SemanticError("Variable cannot be void", 1);
     }
     global_variables[name] = type;
     return true;

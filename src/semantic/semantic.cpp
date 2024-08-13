@@ -22,7 +22,19 @@ class MXErrorListener : public antlr4::BaseErrorListener {
 std::shared_ptr<Program_ASTNode> BuildAST(Visitor *visitor, antlr4::tree::ParseTree *tree) {
   return std::any_cast<std::shared_ptr<Program_ASTNode>>(visitor->visit(tree));
 }
-std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src) { return nullptr; }
+std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src) {
+  auto global_scope = std::dynamic_pointer_cast<GlobalScope>(src->current_scope);
+  if (global_scope->global_functions.find("main") == global_scope->global_functions.end()) {
+    throw SemanticError("No main() function", 1);
+  } else {
+    const auto &main_schema = global_scope->global_functions["main"]->schema;
+    if ((!std::holds_alternative<IdentifierType>(main_schema.return_type)) ||
+        std::get<IdentifierType>(main_schema.return_type) != "int" || main_schema.arguments.size() != 0) {
+      throw SemanticError("main() function should be int main()", 1);
+    }
+  }
+  return src;
+}
 
 void SemanticCheck(std::istream &fin, std::shared_ptr<Program_ASTNode> &ast_out) {
   antlr4::ANTLRInputStream input(fin);

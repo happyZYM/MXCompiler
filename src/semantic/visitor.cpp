@@ -629,15 +629,25 @@ std::any Visitor::visitNew_array_expression(MXParser::New_array_expressionContex
   std::string base_type = context->type()->getText();
   new_array->expr_type_info = ArrayType{true, base_type, total_dimensions};
   size_t total_dim_count = 0;
+  bool dim_size_specified = false;
+  bool dim_with_size_end = false;
   new_array->dim_size.resize(total_dimensions);
   for (size_t i = 3; i < context->children.size() && total_dim_count < total_dimensions; i++) {
     if (dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i]) != nullptr &&
         dynamic_cast<antlr4::tree::TerminalNode *>(context->children[i])->getSymbol()->getType() ==
             MXParser::RBRACKET) {
       total_dim_count++;
+      if (!dim_size_specified) {
+        dim_with_size_end = true;
+      }
+      dim_size_specified = false;
     } else if (dynamic_cast<MXParser::ExprContext *>(context->children[i]) != nullptr) {
       new_array->dim_size[total_dim_count] = std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->children[i]));
       std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "dim " << total_dim_count << " has size " << std::endl;
+      dim_size_specified = true;
+      if (dim_with_size_end) {
+        throw SemanticError("The shape of multidimensional array must be specified from left to right.", 1);
+      }
     }
   }
   if (context->constant() != nullptr) {
