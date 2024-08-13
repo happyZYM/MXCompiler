@@ -13,7 +13,7 @@ build:
 
 # 运行目标，运行生成的可执行文件
 run:
-	@cd $(BUILD_DIR) && ./zmxcc /dev/stdin -o /dev/null
+	@cd $(BUILD_DIR) && ./zmxcc /dev/stdin -o /dev/null 2>/dev/null
 
 # 清理目标
 clean:

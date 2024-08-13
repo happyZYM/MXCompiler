@@ -4,9 +4,10 @@
 #include <stack>
 #include <vector>
 #include "MXParserVisitor.h"
+#include "ast/scope.hpp"
 #include "tools.h"
 class Visitor : public MXParserVisitor {
-  std::vector<ASTNodeType> nodetype_stk;
+  std::vector<std::pair<ASTNodeType, std::shared_ptr<ScopeBase>>> nodetype_stk;
 
  public:
   std::any visitMxprog(MXParser::MxprogContext *context) override;

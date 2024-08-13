@@ -4,15 +4,11 @@
 #include <variant>
 #include <vector>
 #include "../semantic/visitor.h"
+#include "scope.hpp"
 #include "tools.h"
-using IdentifierType = std::string;
-struct ArrayType {
-  bool has_base_type;
-  IdentifierType basetype;
-  size_t level;
-};
-using ExprTypeInfo = std::variant<IdentifierType, ArrayType>;
 class ASTNodeVisitorBase {
+  friend Visitor;
+
  public:
   virtual ~ASTNodeVisitorBase() = default;
   virtual void visit(class ASTNodeBase *context) = 0;
@@ -20,6 +16,9 @@ class ASTNodeVisitorBase {
 
 class ASTNodeBase {
   friend Visitor;
+
+ protected:
+  std::shared_ptr<ScopeBase> current_scope;
   ASTNodeType type;
   // std::vector<std::shared_ptr<ASTNodeBase>> children;
   size_t start_line, start_char_pos, end_line, end_char_pos;

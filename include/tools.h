@@ -1,5 +1,6 @@
 #pragma once
 #include <stdexcept>
+#include <variant>
 enum class ASTNodeType {
   // Expression nodes
   NewArrayExpr,
@@ -59,3 +60,11 @@ class SemanticError : public std::exception {
   const char *what() const noexcept override { return msg.c_str(); }
   int GetErrorCode() const { return error_code; }
 };
+
+using IdentifierType = std::string;
+struct ArrayType {
+  bool has_base_type;
+  IdentifierType basetype;
+  size_t level;
+};
+using ExprTypeInfo = std::variant<IdentifierType, ArrayType>;

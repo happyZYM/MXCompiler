@@ -27,14 +27,16 @@ std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNod
 void SemanticCheck(std::istream &fin, std::shared_ptr<Program_ASTNode> &ast_out) {
   antlr4::ANTLRInputStream input(fin);
   MXLexer lexer(&input);
+  MXErrorListener error_listener;
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(&error_listener);
   antlr4::CommonTokenStream tokens(&lexer);
   tokens.fill();
   MXParser parser(&tokens);
   parser.removeErrorListeners();
-  MXErrorListener error_listener;
   parser.addErrorListener(&error_listener);
   antlr4::tree::ParseTree *tree = parser.mxprog();
-  if (!error_listener.IsOk()) throw SemanticError("Fatal error: syntax error", 1);
+  if (!error_listener.IsOk()) throw SemanticError("Invalid Identifier", 1);
   Visitor visitor;
   std::shared_ptr<Program_ASTNode> ast = BuildAST(&visitor, tree);
   ast_out = CheckAndDecorate(ast);
