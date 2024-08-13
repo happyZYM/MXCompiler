@@ -453,6 +453,12 @@ std::any Visitor::visitDefine_statement(MXParser::Define_statementContext *conte
   def_stmt->end_char_pos = context->getStop()->getCharPositionInLine();
   assert(nodetype_stk.size() > 0);
   def_stmt->current_scope = nodetype_stk.back().second;
+  if (nodetype_stk.size() > 0 && (nodetype_stk.back().first == ASTNodeType::IfStatement ||
+                                  nodetype_stk.back().first == ASTNodeType::WhileStatement ||
+                                  nodetype_stk.back().first == ASTNodeType::ForStatement)) {
+    def_stmt->current_scope = std::make_shared<LocalScope>();
+    def_stmt->current_scope->parent = nodetype_stk.back().second.get();
+  }
   nodetype_stk.push_back({ASTNodeType::DefinitionStatement, def_stmt->current_scope});
   std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "Adding a definition statement" << std::endl;
   std::string define_type_base;

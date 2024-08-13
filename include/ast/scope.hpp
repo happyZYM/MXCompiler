@@ -30,7 +30,7 @@ class LocalScope : public ScopeBase {
   std::unordered_map<std::string, ExprTypeInfo> local_variables;
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
-      throw std::runtime_error("Variable name " + name + " is not available");
+      return false;
     }
     local_variables[name] = type;
     return true;
@@ -78,7 +78,7 @@ class ClassDefScope : public ScopeBase {
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> member_functions;
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
-      throw std::runtime_error("Variable name " + name + " is not available");
+      return false;
     }
     member_variables[name] = type;
     return true;
@@ -97,6 +97,11 @@ class ClassDefScope : public ScopeBase {
   bool VariableNameAvailable(const std::string &name, int ttl) override {
     if (ttl == 0 && IsKeyWord(name)) {
       return false;
+    }
+    if (ttl == 0) {
+      if (member_variables.find(name) != member_variables.end()) {
+        return false;
+      }
     }
     if (member_functions.find(name) != member_functions.end()) {
       return false;
@@ -139,7 +144,7 @@ class GlobalScope : public ScopeBase {
   }
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
-      throw std::runtime_error("Variable name " + name + " is not available");
+      return false;
     }
     global_variables[name] = type;
     return true;
@@ -148,13 +153,15 @@ class GlobalScope : public ScopeBase {
     if (ttl == 0 && IsKeyWord(name)) {
       return false;
     }
-    if (global_variables.find(name) != global_variables.end()) {
-      return false;
+    if (ttl == 0) {
+      if (global_variables.find(name) != global_variables.end()) {
+        return false;
+      }
     }
-    if (classes.find(name) != classes.end()) {
-      return false;
-    }
-    if (classes.find(name) != classes.end()) {
+    // if (classes.find(name) != classes.end()) {
+    //   return false;
+    // }
+    if (global_functions.find(name) != global_functions.end()) {
       return false;
     }
     return true;
