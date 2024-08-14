@@ -1025,6 +1025,7 @@ std::any Visitor::visitConstant(MXParser::ConstantContext *context) {
     }
     constant_expr->value = std::move(tmp);
     constant_expr->level = max_sub_level + 1;
+    constant_expr->expr_type_info = ArrayType();
   } else {
     throw std::runtime_error("unknown constant type");
   }

@@ -53,6 +53,7 @@ void ASTSemanticCheckVisitor::ActuralVisit(Program_ASTNode *node) {
 void ASTSemanticCheckVisitor::ActuralVisit(EmptyStatement_ASTNode *node) {}
 
 void ASTSemanticCheckVisitor::ActuralVisit(DefinitionStatement_ASTNode *node) {
+  std::cerr << "visit definition statement" << std::endl;
   auto cur_scope = node->current_scope;
   for (const auto &var : node->vars) {
     std::string base_type;
@@ -535,6 +536,6 @@ void ASTSemanticCheckVisitor::ActuralVisit(ConstantExpr_ASTNode *node) {
       }
     };
     search(node, 0);
-    node->expr_type_info = ArrayType{true, base_type, found_level};
+    node->expr_type_info = ArrayType{found_base_type, base_type, found_level};
   }
 }

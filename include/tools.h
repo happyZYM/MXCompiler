@@ -68,6 +68,9 @@ struct ArrayType {
   size_t level;
 };
 inline bool operator==(const ArrayType &l, const ArrayType &r) {
+  if (!r.has_base_type) {
+    return l.level >= r.level;
+  }
   return l.has_base_type == r.has_base_type && l.basetype == r.basetype && l.level == r.level;
 }
 using ExprTypeInfo = std::variant<IdentifierType, ArrayType>;
@@ -90,6 +93,7 @@ inline bool operator==(const ExprTypeInfo &l, const ExprTypeInfo &r) {
     return std::holds_alternative<IdentifierType>(r) && std::get<IdentifierType>(l) == std::get<IdentifierType>(r);
   }
   if (std::holds_alternative<ArrayType>(l)) {
+    bool x = std::holds_alternative<ArrayType>(r);
     return std::holds_alternative<ArrayType>(r) && std::get<ArrayType>(l) == std::get<ArrayType>(r);
   }
   throw std::runtime_error("something strange happened");
