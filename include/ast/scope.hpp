@@ -35,11 +35,11 @@ class LocalScope : public ScopeBase {
       return false;
     }
     if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
         std::get<ArrayType>(type).basetype == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     local_variables[name] = type;
     return true;
@@ -109,11 +109,11 @@ class ClassDefScope : public ScopeBase {
       return false;
     }
     if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
         std::get<ArrayType>(type).basetype == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     member_variables[name] = type;
     return true;
@@ -218,11 +218,11 @@ class GlobalScope : public ScopeBase {
       return false;
     }
     if (std::holds_alternative<IdentifierType>(type) && std::get<IdentifierType>(type) == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     if (std::holds_alternative<ArrayType>(type) && std::get<ArrayType>(type).has_base_type &&
         std::get<ArrayType>(type).basetype == "void") {
-      throw SemanticError("Variable cannot be void", 1);
+      throw SemanticError("Invalid Type", 1);
     }
     global_variables[name] = type;
     return true;

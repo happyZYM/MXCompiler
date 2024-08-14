@@ -130,11 +130,11 @@ std::any Visitor::visitFunction_def(MXParser::Function_defContext *context) {
   }
   if (ClassDefScope *cparent = dynamic_cast<ClassDefScope *>(cur_scope->parent)) {
     if (!cparent->add_function(func->func_name, cur_scope)) {
-      throw SemanticError("Function name " + func->func_name + " is not available", 1);
+      throw SemanticError("Multiple Definitions", 1);
     }
   } else if (GlobalScope *gparent = dynamic_cast<GlobalScope *>(cur_scope->parent)) {
     if (!gparent->add_function(func->func_name, cur_scope)) {
-      throw SemanticError("Function name " + func->func_name + " is not available", 1);
+      throw SemanticError("Multiple Definitions", 1);
     }
   } else
     throw std::runtime_error("unknown parent scope type");
@@ -156,7 +156,7 @@ std::any Visitor::visitClass_def(MXParser::Class_defContext *context) {
   GlobalScope *gparent = dynamic_cast<GlobalScope *>(cur_scope->parent);
   assert(gparent != nullptr);
   if (!gparent->add_class(context->ID()->getText(), cur_scope)) {
-    throw SemanticError("Class name " + context->ID()->getText() + " is not available", 1);
+    throw SemanticError("Multiple Definitions", 1);
   }
   nodetype_stk.push_back({ASTNodeType::ClassDef, class_def->current_scope});
 
@@ -239,7 +239,7 @@ std::any Visitor::visitClass_var_def(MXParser::Class_var_defContext *context) {
     std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded member variable name is " << id->getText()
               << std::endl;
     if (!member_var_def->current_scope->add_variable(id->getText(), member_var_def->var_type)) {
-      throw SemanticError("Variable name " + id->getText() + " is not available", 1);
+      throw SemanticError("Multiple Definitions", 1);
     }
   }
 
