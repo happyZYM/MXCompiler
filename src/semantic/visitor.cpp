@@ -257,7 +257,7 @@ std::any Visitor::visitClass_constructor(MXParser::Class_constructorContext *con
   auto cur_scope = std::make_shared<FunctionScope>();
   cur_scope->parent = nodetype_stk.back().second.get();
   construct_func->current_scope = cur_scope;
-  cur_scope->schema.return_type = "null";
+  cur_scope->schema.return_type = "void";
   nodetype_stk.push_back({ASTNodeType::Constructor, construct_func->current_scope});
 
   construct_func->func_body = std::dynamic_pointer_cast<SuiteStatement_ASTNode>(

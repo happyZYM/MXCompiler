@@ -71,6 +71,7 @@ class FunctionScope : public ScopeBase {
   friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   friend class Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class GlobalScope;
   FunctionSchema schema;
   bool add_variable([[maybe_unused]] const std::string &name, [[maybe_unused]] const ExprTypeInfo &type) override {
     throw std::runtime_error("FunctionScope does not support add_variable");
@@ -99,6 +100,8 @@ class FunctionScope : public ScopeBase {
 };
 class ClassDefScope : public ScopeBase {
   friend class Visitor;
+  friend class GlobalScope;
+  friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
   std::unordered_map<std::string, ExprTypeInfo> member_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> member_functions;
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
@@ -156,6 +159,32 @@ class GlobalScope : public ScopeBase {
   std::unordered_map<std::string, ExprTypeInfo> global_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> global_functions;
   std::unordered_map<std::string, std::shared_ptr<ClassDefScope>> classes;
+  ExprTypeInfo FetchClassMemberVariable(const std::string &class_name, const std::string &var_name) {
+    if (classes.find(class_name) == classes.end()) {
+      throw SemanticError("Class " + class_name + " not found", 1);
+    }
+    auto ptr = classes[class_name];
+    if (ptr->member_variables.find(var_name) == ptr->member_variables.end()) {
+      throw SemanticError("Variable " + var_name + " not found in class " + class_name, 1);
+    }
+    return ptr->member_variables[var_name];
+  }
+  FunctionSchema FetchClassMemberFunction(const std::string &class_name, const std::string &func_name) {
+    if (classes.find(class_name) == classes.end()) {
+      throw SemanticError("Class " + class_name + " not found", 1);
+    }
+    auto ptr = classes[class_name];
+    if (ptr->member_functions.find(func_name) == ptr->member_functions.end()) {
+      throw SemanticError("Function " + func_name + " not found in class " + class_name, 1);
+    }
+    return ptr->member_functions[func_name]->schema;
+  }
+  FunctionSchema FetchFunction(const std::string &name) {
+    if (global_functions.find(name) == global_functions.end()) {
+      throw SemanticError("Function " + name + " not found", 1);
+    }
+    return global_functions[name]->schema;
+  }
   bool add_class(const std::string &name, std::shared_ptr<ClassDefScope> ptr) {
     if (IsKeyWord(name)) return false;
     if (classes.find(name) != classes.end()) {

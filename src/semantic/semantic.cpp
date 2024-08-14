@@ -36,7 +36,37 @@ std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNod
   }
   ASTSemanticCheckVisitor visitor;
   visitor.global_scope = global_scope;
-  global_scope->classes["string"] = nullptr;  // TODO: add string class
+  global_scope->classes["string"] = std::make_shared<ClassDefScope>();
+  global_scope->classes["string"]->member_functions["length"] = std::make_shared<FunctionScope>();
+  global_scope->classes["string"]->member_functions["length"]->schema.return_type = "int";
+  global_scope->classes["string"]->member_functions["substring"] = std::make_shared<FunctionScope>();
+  global_scope->classes["string"]->member_functions["substring"]->schema.return_type = "string";
+  global_scope->classes["string"]->member_functions["substring"]->schema.arguments = {{"int", "left"},
+                                                                                      {"int", "right"}};
+  global_scope->classes["string"]->member_functions["parseInt"] = std::make_shared<FunctionScope>();
+  global_scope->classes["string"]->member_functions["parseInt"]->schema.return_type = "int";
+  global_scope->classes["string"]->member_functions["ord"] = std::make_shared<FunctionScope>();
+  global_scope->classes["string"]->member_functions["ord"]->schema.return_type = "int";
+  global_scope->classes["string"]->member_functions["ord"]->schema.arguments = {{"int", "pos"}};
+  global_scope->global_functions["print"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["print"]->schema.return_type = "void";
+  global_scope->global_functions["print"]->schema.arguments = {{"string", "str"}};
+  global_scope->global_functions["println"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["println"]->schema.return_type = "void";
+  global_scope->global_functions["println"]->schema.arguments = {{"string", "str"}};
+  global_scope->global_functions["printInt"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["printInt"]->schema.return_type = "void";
+  global_scope->global_functions["printInt"]->schema.arguments = {{"int", "n"}};
+  global_scope->global_functions["printlnInt"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["printlnInt"]->schema.return_type = "void";
+  global_scope->global_functions["printlnInt"]->schema.arguments = {{"int", "n"}};
+  global_scope->global_functions["getString"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["getString"]->schema.return_type = "string";
+  global_scope->global_functions["getInt"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["getInt"]->schema.return_type = "int";
+  global_scope->global_functions["toString"] = std::make_shared<FunctionScope>();
+  global_scope->global_functions["toString"]->schema.return_type = "string";
+  global_scope->global_functions["toString"]->schema.arguments = {{"int", "n"}};
   visitor.visit(src.get());
   return src;
 }
