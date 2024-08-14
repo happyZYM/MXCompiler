@@ -55,9 +55,11 @@ class ASTNodeVirturalVisitor : public ASTNodeVisitorBase {
 };
 
 class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
-  bool is_in_func;
+  bool is_in_func_def;
+  bool has_return;
   FunctionSchema cur_func_schema;
   std::string cur_class_name;
+  bool is_in_class_def;
   size_t loop_level;
   std::shared_ptr<GlobalScope> global_scope;
   friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
@@ -68,7 +70,7 @@ class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
   }
 
  public:
-  ASTSemanticCheckVisitor() : is_in_func(false), loop_level(0) {}
+  ASTSemanticCheckVisitor() : is_in_func_def(false), loop_level(0) {}
   // Structural AST Nodes
   void ActuralVisit(FuncDef_ASTNode *node) override;
   void ActuralVisit(ClassDef_ASTNode *node) override;

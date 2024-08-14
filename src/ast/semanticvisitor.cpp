@@ -6,12 +6,17 @@
 
 // Structural AST Nodes
 void ASTSemanticCheckVisitor::ActuralVisit(FuncDef_ASTNode *node) {
-  is_in_func = true;
+  is_in_func_def = true;
   cur_func_schema = std::dynamic_pointer_cast<FunctionScope>(node->current_scope)->schema;
   std::cerr << "enter function " << node->func_name << std::endl;
+  has_return = false;
   node->func_body->accept(this);
+  if (!has_return && std::holds_alternative<IdentifierType>(cur_func_schema.return_type) &&
+      std::get<IdentifierType>(cur_func_schema.return_type) != "void" && node->func_name != "main") {
+    throw SemanticError("Non-void function must have a return value", 1);
+  }
   std::cerr << "leave function " << node->func_name << std::endl;
-  is_in_func = false;
+  is_in_func_def = false;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(ClassDef_ASTNode *node) {
@@ -19,11 +24,23 @@ void ASTSemanticCheckVisitor::ActuralVisit(ClassDef_ASTNode *node) {
   //   var->accept(this);
   // }
   cur_class_name = node->class_name;
+  is_in_class_def = true;
+  if (node->constructor) {
+    if (node->constructor->func_name != node->class_name) {
+      throw SemanticError("Constructor name mismatch", 1);
+    }
+  }
+  for (auto func : node->member_functions) {
+    if (func->func_name == node->class_name) {
+      throw SemanticError("Constructor Type Error", 1);
+    }
+  }
   for (auto ch : node->sorted_children) {
     if (std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(ch) == nullptr) {
       ch->accept(this);
     }
   }
+  is_in_class_def = false;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(Program_ASTNode *node) {
@@ -109,8 +126,9 @@ void ASTSemanticCheckVisitor::ActuralVisit(JmpStatement_ASTNode *node) {
   if (loop_level == 0 && node->jmp_type > 0) throw SemanticError("Jump statement outside loop", 1);
   if (node->jmp_type == 0) {
     if (node->return_value) {
+      has_return = true;
       node->return_value->accept(this);
-      if (node->return_value->expr_type_info != cur_func_schema.return_type) {
+      if (cur_func_schema.return_type != node->return_value->expr_type_info) {
         throw SemanticError("Return type mismatch", 1);
       }
     } else {
@@ -189,11 +207,11 @@ void ASTSemanticCheckVisitor::ActuralVisit(AccessExpr_ASTNode *node) {
       }
     }
     node->expr_type_info = schema.return_type;
-    node->assignable = true;
-    if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
-      std::string type = std::get<IdentifierType>(node->expr_type_info);
-      if (type == "int" || type == "bool" || type == "void") node->assignable = false;
-    }
+    // node->assignable = true;
+    // if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
+    //   std::string type = std::get<IdentifierType>(node->expr_type_info);
+    //   if (type == "int" || type == "bool" || type == "void") node->assignable = false;
+    // }
   } else {
     node->expr_type_info = global_scope->FetchClassMemberVariable(base_type, node->member);
     node->assignable = true;
@@ -405,7 +423,8 @@ void ASTSemanticCheckVisitor::ActuralVisit(TernaryExpr_ASTNode *node) {
   const static ExprTypeInfo standard = "bool";
   node->src1->accept(this);
   node->src2->accept(this);
-  if (node->src1->expr_type_info != node->src2->expr_type_info) {
+  if (node->src1->expr_type_info != node->src2->expr_type_info &&
+      node->src2->expr_type_info != node->src1->expr_type_info) {
     throw SemanticError("Ternary operation on different type", 1);
   }
   node->expr_type_info = node->src1->expr_type_info;
@@ -444,7 +463,18 @@ void ASTSemanticCheckVisitor::ActuralVisit(IDExpr_ASTNode *node) {
 void ASTSemanticCheckVisitor::ActuralVisit(FunctionCallExpr_ASTNode *node) {
   // TODO: Implement this method
   // TODO: check function existence and arg number
-  auto schema = global_scope->FetchFunction(node->func_name);
+  FunctionSchema schema;
+  bool schema_ready = false;
+  if (is_in_class_def) {
+    try {
+      schema = global_scope->FetchClassMemberFunction(cur_class_name, node->func_name);
+      schema_ready = true;
+    } catch (...) {
+    }
+  }
+  if (!schema_ready) {
+    schema = global_scope->FetchFunction(node->func_name);
+  }
   std::cerr << "function to call is " << node->func_name << std::endl;
   if (schema.arguments.size() != node->arguments.size()) {
     throw SemanticError("Argument number mismatch", 1);
@@ -452,16 +482,16 @@ void ASTSemanticCheckVisitor::ActuralVisit(FunctionCallExpr_ASTNode *node) {
   for (auto &arg : node->arguments) {
     arg->accept(this);
     int idx = &arg - &node->arguments[0];  // for debug;
-    if (arg->expr_type_info != schema.arguments[&arg - &node->arguments[0]].first) {
+    if (schema.arguments[&arg - &node->arguments[0]].first != arg->expr_type_info) {
       throw SemanticError("Argument type mismatch", 1);
     }
   }
   node->expr_type_info = schema.return_type;
-  node->assignable = true;
-  if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
-    std::string type = std::get<IdentifierType>(node->expr_type_info);
-    if (type == "int" || type == "bool" || type == "void") node->assignable = false;
-  }
+  // node->assignable = true;
+  // if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
+  //   std::string type = std::get<IdentifierType>(node->expr_type_info);
+  //   if (type == "int" || type == "bool" || type == "void") node->assignable = false;
+  // }
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(FormattedStringExpr_ASTNode *node) {
