@@ -161,27 +161,27 @@ class GlobalScope : public ScopeBase {
   std::unordered_map<std::string, std::shared_ptr<ClassDefScope>> classes;
   ExprTypeInfo FetchClassMemberVariable(const std::string &class_name, const std::string &var_name) {
     if (classes.find(class_name) == classes.end()) {
-      throw SemanticError("Class " + class_name + " not found", 1);
+      throw SemanticError("Undefined Identifier", 1);
     }
     auto ptr = classes[class_name];
     if (ptr->member_variables.find(var_name) == ptr->member_variables.end()) {
-      throw SemanticError("Variable " + var_name + " not found in class " + class_name, 1);
+      throw SemanticError("Undefined Identifier", 1);
     }
     return ptr->member_variables[var_name];
   }
   FunctionSchema FetchClassMemberFunction(const std::string &class_name, const std::string &func_name) {
     if (classes.find(class_name) == classes.end()) {
-      throw SemanticError("Class " + class_name + " not found", 1);
+      throw SemanticError("Undefined Identifier", 1);
     }
     auto ptr = classes[class_name];
     if (ptr->member_functions.find(func_name) == ptr->member_functions.end()) {
-      throw SemanticError("Function " + func_name + " not found in class " + class_name, 1);
+      throw SemanticError("Undefined Identifier", 1);
     }
     return ptr->member_functions[func_name]->schema;
   }
   FunctionSchema FetchFunction(const std::string &name) {
     if (global_functions.find(name) == global_functions.end()) {
-      throw SemanticError("Function " + name + " not found", 1);
+      throw SemanticError("Undefined Identifier", 1);
     }
     return global_functions[name]->schema;
   }
@@ -248,7 +248,7 @@ class GlobalScope : public ScopeBase {
     if (global_variables.find(name) != global_variables.end()) {
       return global_variables[name];
     }
-    throw SemanticError("Variable " + name + " not found", 1);
+    throw SemanticError("Undefined Identifier", 1);
   }
 
  public:
