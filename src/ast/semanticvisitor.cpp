@@ -323,6 +323,9 @@ void ASTSemanticCheckVisitor::ActuralVisit(PMExpr_ASTNode *node) {
   }
   const static ExprTypeInfo standard = "int";
   if (node->left->expr_type_info != standard || node->right->expr_type_info != standard) {
+    if (node->left->expr_type_info == node->right->expr_type_info) {
+      throw SemanticError("Invalid Type", 1);
+    }
     throw SemanticError("Type Mismatch", 1);
   }
   node->expr_type_info = standard;
