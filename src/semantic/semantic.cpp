@@ -14,8 +14,8 @@ class MXErrorListener : public antlr4::BaseErrorListener {
   MXErrorListener() : no_problem(true) {}
   void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line,
                    size_t charPositionInLine, const std::string &msg, std::exception_ptr e) override {
-    std::cout << "line " << line << ":" << charPositionInLine << " AT " << offendingSymbol->getText() << ": " << msg
-              << std::endl;
+    // std::cerr << "line " << line << ":" << charPositionInLine << " AT " << offendingSymbol->getText() << ": " << msg
+    //           << std::endl;
     no_problem = false;
   }
   bool IsOk() { return no_problem; }
@@ -79,6 +79,7 @@ void SemanticCheck(std::istream &fin, std::shared_ptr<Program_ASTNode> &ast_out)
   lexer.addErrorListener(&error_listener);
   antlr4::CommonTokenStream tokens(&lexer);
   tokens.fill();
+  if (!error_listener.IsOk()) throw SemanticError("Invalid Identifier", 1);
   MXParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(&error_listener);

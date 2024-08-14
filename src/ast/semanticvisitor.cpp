@@ -130,11 +130,11 @@ void ASTSemanticCheckVisitor::ActuralVisit(JmpStatement_ASTNode *node) {
       has_return = true;
       node->return_value->accept(this);
       if (cur_func_schema.return_type != node->return_value->expr_type_info) {
-        throw SemanticError("Return type mismatch", 1);
+        throw SemanticError("Type Mismatch", 1);
       }
     } else {
       if (cur_func_schema.return_type != "void") {
-        throw SemanticError("Return type mismatch", 1);
+        throw SemanticError("Type Mismatch", 1);
       }
     }
   }
