@@ -9,9 +9,10 @@ class Expr_ASTNode : public ASTNodeBase {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
   ExprTypeInfo expr_type_info;
+  bool assignable;
 
  public:
-  Expr_ASTNode() = default;
+  Expr_ASTNode() : assignable(false){};
   virtual ~Expr_ASTNode() = default;
 };
 

@@ -238,9 +238,9 @@ std::any Visitor::visitClass_var_def(MXParser::Class_var_defContext *context) {
     member_var_def->vars.push_back(std::make_pair(id->getText(), nullptr));
     std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "recorded member variable name is " << id->getText()
               << std::endl;
-    // if (!member_var_def->current_scope->add_variable(id->getText(), member_var_def->var_type)) {
-    //   throw SemanticError("Variable name " + id->getText() + " is not available", 1);
-    // }
+    if (!member_var_def->current_scope->add_variable(id->getText(), member_var_def->var_type)) {
+      throw SemanticError("Variable name " + id->getText() + " is not available", 1);
+    }
   }
 
   nodetype_stk.pop_back();

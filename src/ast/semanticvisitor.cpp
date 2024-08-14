@@ -15,9 +15,9 @@ void ASTSemanticCheckVisitor::ActuralVisit(FuncDef_ASTNode *node) {
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(ClassDef_ASTNode *node) {
-  for (auto var : node->member_variables) {
-    var->accept(this);
-  }
+  // for (auto var : node->member_variables) {
+  //   var->accept(this);
+  // }
   cur_class_name = node->class_name;
   for (auto ch : node->sorted_children) {
     if (std::dynamic_pointer_cast<DefinitionStatement_ASTNode>(ch) == nullptr) {
@@ -47,12 +47,16 @@ void ASTSemanticCheckVisitor::ActuralVisit(DefinitionStatement_ASTNode *node) {
     if (!ClassExists(base_type)) {
       throw SemanticError("Undefined class " + base_type, 1);
     }
+    if (var.second) {
+      var.second->accept(this);
+    }
     if (!cur_scope->add_variable(var.first, node->var_type)) {
       throw SemanticError("Variable redefinition for " + var.first, 1);
     }
     if (var.second) {
-      var.second->accept(this);
-      // TODO type check
+      if (node->var_type != var.second->expr_type_info) {
+        throw SemanticError("Variable type mismatch", 1);
+      }
     }
   }
 }
@@ -125,6 +129,9 @@ void ASTSemanticCheckVisitor::ActuralVisit(SuiteStatement_ASTNode *node) {
 
 // Expression AST Nodes
 void ASTSemanticCheckVisitor::ActuralVisit(NewArrayExpr_ASTNode *node) {
+  if (std::get<ArrayType>(node->expr_type_info).basetype == "void") {
+    throw SemanticError("Array base type cannot be void", 1);
+  }
   for (size_t i = 0; i < node->dim_size.size(); i++) {
     if (node->dim_size[i]) {
       node->dim_size[i]->accept(this);
@@ -142,9 +149,17 @@ void ASTSemanticCheckVisitor::ActuralVisit(NewArrayExpr_ASTNode *node) {
   }
 }
 
-void ASTSemanticCheckVisitor::ActuralVisit(NewConstructExpr_ASTNode *node) {}
+void ASTSemanticCheckVisitor::ActuralVisit(NewConstructExpr_ASTNode *node) {
+  if (std::get<IdentifierType>(node->expr_type_info) == "void") {
+    throw SemanticError("Cannot construct void", 1);
+  }
+}
 
-void ASTSemanticCheckVisitor::ActuralVisit(NewExpr_ASTNode *node) {}
+void ASTSemanticCheckVisitor::ActuralVisit(NewExpr_ASTNode *node) {
+  if (std::get<IdentifierType>(node->expr_type_info) == "void") {
+    throw SemanticError("Cannot construct void", 1);
+  }
+}
 
 void ASTSemanticCheckVisitor::ActuralVisit(AccessExpr_ASTNode *node) {
   // TODO: Implement this method
@@ -173,8 +188,15 @@ void ASTSemanticCheckVisitor::ActuralVisit(AccessExpr_ASTNode *node) {
         throw SemanticError("Argument type mismatch", 1);
       }
     }
+    node->expr_type_info = schema.return_type;
+    node->assignable = true;
+    if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
+      std::string type = std::get<IdentifierType>(node->expr_type_info);
+      if (type == "int" || type == "bool" || type == "void") node->assignable = false;
+    }
   } else {
     node->expr_type_info = global_scope->FetchClassMemberVariable(base_type, node->member);
+    node->assignable = true;
   }
 }
 
@@ -200,11 +222,15 @@ void ASTSemanticCheckVisitor::ActuralVisit(IndexExpr_ASTNode *node) {
   } else {
     node->expr_type_info = ArrayType{true, tp.basetype, tp.level - node->indices.size()};
   }
+  node->assignable = true;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(SuffixExpr_ASTNode *node) {
   // TODO: Implement this method
   node->base->accept(this);
+  if (!node->base->assignable) {
+    throw SemanticError("Suffix operation on non-assignable", 1);
+  }
   const static ExprTypeInfo standard = "int";
   if (node->base->expr_type_info != standard) {
     throw SemanticError("Suffix operation on non-int", 1);
@@ -215,11 +241,15 @@ void ASTSemanticCheckVisitor::ActuralVisit(SuffixExpr_ASTNode *node) {
 void ASTSemanticCheckVisitor::ActuralVisit(PrefixExpr_ASTNode *node) {
   // TODO: Implement this method
   node->base->accept(this);
+  if (!node->base->assignable) {
+    throw SemanticError("Prefix operation on non-assignable", 1);
+  }
   const static ExprTypeInfo standard = "int";
   if (node->base->expr_type_info != standard) {
     throw SemanticError("Prefix operation on non-int", 1);
   }
   node->expr_type_info = standard;
+  node->assignable = true;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(OppositeExpr_ASTNode *node) {
@@ -384,6 +414,9 @@ void ASTSemanticCheckVisitor::ActuralVisit(TernaryExpr_ASTNode *node) {
 void ASTSemanticCheckVisitor::ActuralVisit(AssignExpr_ASTNode *node) {
   // TODO: Implement this method
   node->dest->accept(this);
+  if (!node->dest->assignable) {
+    throw SemanticError("Assign operation on non-assignable", 1);
+  }
   node->src->accept(this);
   if (node->dest->expr_type_info != node->src->expr_type_info) {
     throw SemanticError("Assign operation on different type", 1);
@@ -398,12 +431,14 @@ void ASTSemanticCheckVisitor::ActuralVisit(ThisExpr_ASTNode *node) {
 void ASTSemanticCheckVisitor::ActuralVisit(ParenExpr_ASTNode *node) {
   node->expr->accept(this);
   node->expr_type_info = node->expr->expr_type_info;
+  node->assignable = node->expr->assignable;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(IDExpr_ASTNode *node) {
   // TODO: Implement this method
   // TODO: process type
   node->expr_type_info = node->current_scope->fetch_varaible(node->id);
+  node->assignable = true;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(FunctionCallExpr_ASTNode *node) {
@@ -422,6 +457,11 @@ void ASTSemanticCheckVisitor::ActuralVisit(FunctionCallExpr_ASTNode *node) {
     }
   }
   node->expr_type_info = schema.return_type;
+  node->assignable = true;
+  if (std::holds_alternative<IdentifierType>(node->expr_type_info)) {
+    std::string type = std::get<IdentifierType>(node->expr_type_info);
+    if (type == "int" || type == "bool" || type == "void") node->assignable = false;
+  }
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(FormattedStringExpr_ASTNode *node) {
