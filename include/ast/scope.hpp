@@ -19,6 +19,7 @@ class ScopeBase {
   ScopeBase *parent;  // cannot use std::shared_ptr<ScopeBase> because of circular dependency
   virtual bool VariableNameAvailable(const std::string &name, int ttl) = 0;
   virtual bool add_variable(const std::string &name, const ExprTypeInfo &type) = 0;
+  virtual ExprTypeInfo fetch_varaible(const std::string &name) = 0;
   static inline bool IsKeyWord(const std::string &name) {
     static const std::unordered_set<std::string> keywords = {"void", "bool",  "int",   "string",   "new",   "class",
                                                              "null", "true",  "false", "this",     "if",    "else",
@@ -43,6 +44,12 @@ class LocalScope : public ScopeBase {
     local_variables[name] = type;
     return true;
   }
+  virtual ExprTypeInfo fetch_varaible(const std::string &name) override {
+    if (local_variables.find(name) != local_variables.end()) {
+      return local_variables[name];
+    }
+    return parent->fetch_varaible(name);
+  }
   bool VariableNameAvailable(const std::string &name, int ttl) override {
     if (ttl == 0 && IsKeyWord(name)) {
       return false;
@@ -63,9 +70,18 @@ struct FunctionSchema {
 class FunctionScope : public ScopeBase {
   friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   friend class Visitor;
+  friend class ASTSemanticCheckVisitor;
   FunctionSchema schema;
   bool add_variable([[maybe_unused]] const std::string &name, [[maybe_unused]] const ExprTypeInfo &type) override {
     throw std::runtime_error("FunctionScope does not support add_variable");
+  }
+  virtual ExprTypeInfo fetch_varaible(const std::string &name) override {
+    for (const auto &arg : schema.arguments) {
+      if (arg.second == name) {
+        return arg.first;
+      }
+    }
+    return parent->fetch_varaible(name);
   }
   bool VariableNameAvailable(const std::string &name, int ttl) override {
     if (ttl == 0 && IsKeyWord(name)) {
@@ -99,6 +115,12 @@ class ClassDefScope : public ScopeBase {
     member_variables[name] = type;
     return true;
   }
+  virtual ExprTypeInfo fetch_varaible(const std::string &name) override {
+    if (member_variables.find(name) != member_variables.end()) {
+      return member_variables[name];
+    }
+    return parent->fetch_varaible(name);
+  }
   bool add_function(const std::string &name, std::shared_ptr<FunctionScope> ptr) {
     if (IsKeyWord(name)) return false;
     if (member_variables.find(name) != member_variables.end()) {
@@ -129,6 +151,7 @@ class ClassDefScope : public ScopeBase {
 };
 class GlobalScope : public ScopeBase {
   friend class Visitor;
+  friend class ASTSemanticCheckVisitor;
   friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   std::unordered_map<std::string, ExprTypeInfo> global_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> global_functions;
@@ -191,6 +214,12 @@ class GlobalScope : public ScopeBase {
       return false;
     }
     return true;
+  }
+  virtual ExprTypeInfo fetch_varaible(const std::string &name) override {
+    if (global_variables.find(name) != global_variables.end()) {
+      return global_variables[name];
+    }
+    throw SemanticError("Variable " + name + " not found", 1);
   }
 
  public:

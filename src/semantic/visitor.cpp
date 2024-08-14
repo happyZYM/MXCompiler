@@ -675,7 +675,8 @@ std::any Visitor::visitNew_array_expression(MXParser::New_array_expressionContex
     new_array->has_initial_value = true;
     new_array->initial_value = std::dynamic_pointer_cast<ConstantExpr_ASTNode>(
         std::any_cast<std::shared_ptr<Expr_ASTNode>>(visit(context->constant())));
-  }
+  } else
+    new_array->has_initial_value = false;
 
   nodetype_stk.pop_back();
   return std::static_pointer_cast<Expr_ASTNode>(new_array);

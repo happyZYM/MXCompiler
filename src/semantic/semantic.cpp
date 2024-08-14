@@ -35,6 +35,8 @@ std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNod
     }
   }
   ASTSemanticCheckVisitor visitor;
+  visitor.global_scope = global_scope;
+  global_scope->classes["string"] = nullptr;  // TODO: add string class
   visitor.visit(src.get());
   return src;
 }
