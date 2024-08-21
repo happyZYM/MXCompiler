@@ -1,6 +1,7 @@
 #include <argparse/argparse.hpp>
 #include <fstream>
 #include <iostream>
+#include "IR/IR.h"
 #include "semantic/semantic.h"
 
 int main(int argc, char **argv) {
@@ -24,6 +25,7 @@ int main(int argc, char **argv) {
   std::shared_ptr<Program_ASTNode> ast;
   try {
     SemanticCheck(fin, ast);
+    auto IR = BuildIR(ast);
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;
     return err.GetErrorCode();

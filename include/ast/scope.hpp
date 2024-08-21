@@ -17,6 +17,7 @@ class ScopeBase {
 
  protected:
   ScopeBase *parent;  // cannot use std::shared_ptr<ScopeBase> because of circular dependency
+  size_t scope_id;
   virtual bool VariableNameAvailable(const std::string &name, int ttl) = 0;
   virtual bool add_variable(const std::string &name, const ExprTypeInfo &type) = 0;
   virtual ExprTypeInfo fetch_varaible(const std::string &name) = 0;
@@ -25,6 +26,11 @@ class ScopeBase {
                                                              "null", "true",  "false", "this",     "if",    "else",
                                                              "for",  "while", "break", "continue", "return"};
     return keywords.find(name) != keywords.end();
+  }
+  public:
+  ScopeBase() {
+    static size_t scope_counter=0;
+    scope_id = scope_counter++;
   }
 };
 class LocalScope : public ScopeBase {
@@ -104,6 +110,7 @@ class ClassDefScope : public ScopeBase {
   friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
   std::unordered_map<std::string, ExprTypeInfo> member_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> member_functions;
+  IRClassInfo llvm_class_info;
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
       return false;

@@ -1,6 +1,6 @@
 #include <cstddef>
 #include <functional>
-#include "astnode_visitor.h"
+#include "semantic_visitor.h"
 #include "scope.hpp"
 #include "tools.h"
 
@@ -444,6 +444,7 @@ void ASTSemanticCheckVisitor::ActuralVisit(AssignExpr_ASTNode *node) {
   if (node->dest->expr_type_info != node->src->expr_type_info) {
     throw SemanticError("Type Mismatch", 1);
   }
+  node->expr_type_info = node->src->expr_type_info;
 }
 
 void ASTSemanticCheckVisitor::ActuralVisit(ThisExpr_ASTNode *node) {
