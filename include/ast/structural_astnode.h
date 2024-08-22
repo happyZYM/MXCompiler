@@ -10,6 +10,7 @@
 class FuncDef_ASTNode : public ASTNodeBase {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   bool is_constructor;
   IdentifierType func_name;
   ExprTypeInfo return_type;
@@ -23,6 +24,7 @@ class FuncDef_ASTNode : public ASTNodeBase {
 class ClassDef_ASTNode : public ASTNodeBase {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
 
  private:
   std::string class_name;
@@ -36,8 +38,10 @@ class ClassDef_ASTNode : public ASTNodeBase {
   virtual void accept(class ASTNodeVisitorBase *visitor) override;
 };
 class Program_ASTNode : public ASTNodeBase {
+  friend std::shared_ptr<class ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::vector<std::shared_ptr<DefinitionStatement_ASTNode>> global_variables;
   std::vector<std::shared_ptr<ClassDef_ASTNode>> classes;
   std::vector<std::shared_ptr<FuncDef_ASTNode>> functions;

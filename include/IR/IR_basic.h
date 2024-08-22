@@ -1,132 +1,458 @@
 #pragma once
+#include <cstddef>
 #include <ios>
+#include <list>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
 #include "ast/astnode.h"
-struct LLVMIRIntType {
-  size_t bits;
-};
-struct LLVMIRPTRType {};
-struct LLVMIRCLASSTYPE {};
-using LLVMType = std::variant<LLVMIRIntType, LLVMIRPTRType, LLVMIRCLASSTYPE>;
+#include "tools.h"
+
 class LLVMIRItemBase {
  public:
   LLVMIRItemBase() = default;
   virtual ~LLVMIRItemBase() = default;
-  virtual void RecursivePrint(std::ostream &os) const;
+  virtual void RecursivePrint(std::ostream &os) const = 0;
 };
 
 class TypeDefItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  std::string class_name_raw;
+  std::vector<LLVMType> elements;
+
  public:
-  void RecursivePrint(std::ostream &os) const { ; }
+  TypeDefItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "%.class." << class_name_raw;
+    os << " = type {";
+    for (size_t i = 0; i < elements.size(); i++) {
+      if (std::holds_alternative<LLVMIRIntType>(elements[i])) {
+        os << "i" << std::get<LLVMIRIntType>(elements[i]).bits;
+      } else if (std::holds_alternative<LLVMIRPTRType>(elements[i])) {
+        os << "ptr";
+      } else if (std::holds_alternative<LLVMVOIDType>(elements[i])) {
+        os << "void";
+      } else if (std::holds_alternative<LLVMIRCLASSTYPE>(elements[i])) {
+        throw std::runtime_error("In MX* language, class types are referenced by pointers");
+      }
+      if (i != elements.size() - 1) {
+        os << ",";
+      }
+    }
+    os << "}\n";
+  }
 };
 class GlobalVarDefItem : public LLVMIRItemBase {
+  friend class IRBuilder;
   LLVMType type;
-  std::string name;
+  std::string name_raw;
 
  public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class ActionItem : public LLVMIRItemBase {
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class JMPActionItem : public ActionItem {
-  std::string label;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class BRAction: public JMPActionItem {
-  std::string cond;
-  std::string true_label;
-  std::string false_label;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class UNConditionJMPAction: public JMPActionItem {
-  std::string label;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class RETAction : public JMPActionItem {
-  std::string value;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class BinaryOperationAction : public ActionItem {
-  std::string op;
-  std::string lhs;
-  std::string rhs;
-  std::string result;
-  LLVMType type;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class AllocaAction : public ActionItem {
-  std::string name;
-  LLVMType type;
-  size_t num;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class LoadAction : public ActionItem {
-  std::string result;
-  LLVMType ty;
-  std::string ptr;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class StoreAction : public ActionItem {
-  LLVMType ty;
-  std::string value;
-  std::string ptr;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class GetElementPtrAction : public ActionItem {
-  std::string result;
-  LLVMType ty;
-  std::string ptr;
-  std::vector<std::string> indices;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class ICMPAction : public ActionItem {
-  std::string op;
-  std::string lhs;
-  std::string rhs;
-  std::string result;
-  LLVMType ty;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class BlockItem : public LLVMIRItemBase {
-  std::string label;
-  std::vector<std::shared_ptr<ActionItem>> actions;
-  std::shared_ptr<JMPActionItem> exit_action;
- public:
-  void RecursivePrint(std::ostream &os) const { ; }
-};
-class FunctionDefItem : public LLVMIRItemBase {
-  std::vector<std::shared_ptr<BlockItem>> basic_blocks;
-
- public:
+  GlobalVarDefItem() = default;
   void RecursivePrint(std::ostream &os) const {
-    for (auto &item : basic_blocks) {
-      item->RecursivePrint(os);
-      os << '\n';
+    std::string name_full = "@.var.global." + name_raw + ".addrkp";
+    os << name_full << " = global ";
+    if (std::holds_alternative<LLVMIRIntType>(type)) {
+      os << "i" << std::get<LLVMIRIntType>(type).bits << " 0\n";
+    } else if (std::holds_alternative<LLVMIRPTRType>(type)) {
+      os << "ptr null\n";
+    } else {
+      throw std::runtime_error("something strange happened");
     }
   }
 };
+class ActionItem : public LLVMIRItemBase {};
+class JMPActionItem : public ActionItem {};
+class BRAction : public JMPActionItem {
+  friend class IRBuilder;
+  std::string cond;
+  std::string true_label_full;
+  std::string false_label_full;
+
+ public:
+  BRAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "br i1 " << cond << ", label %" << true_label_full << ", label %" << false_label_full << "\n";
+  }
+};
+class UNConditionJMPAction : public JMPActionItem {
+  friend class IRBuilder;
+  std::string label_full;
+
+ public:
+  UNConditionJMPAction() = default;
+  void RecursivePrint(std::ostream &os) const { os << "br label %" << label_full << "\n"; }
+};
+class RETAction : public JMPActionItem {
+  friend class IRBuilder;
+  LLVMType type;
+  std::string value;
+
+ public:
+  RETAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    if (std::holds_alternative<LLVMVOIDType>(type)) {
+      os << "ret void\n";
+    } else if (std::holds_alternative<LLVMIRIntType>(type)) {
+      os << "ret i" << std::get<LLVMIRIntType>(type).bits << " " << value << "\n";
+    } else if (std::holds_alternative<LLVMIRPTRType>(type)) {
+      os << "ret ptr " << value << "\n";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+  }
+};
+class BinaryOperationAction : public ActionItem {
+  friend class IRBuilder;
+  std::string op;
+  std::string operand1_full;
+  std::string operand2_full;
+  std::string result_full;
+  LLVMType type;
+
+ public:
+  BinaryOperationAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = " << op << " ";
+    if (std::holds_alternative<LLVMIRIntType>(type)) {
+      os << "i" << std::get<LLVMIRIntType>(type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(type)) {
+      os << "ptr";
+    } else if (std::holds_alternative<LLVMVOIDType>(type)) {
+      os << "void";
+    } else if (std::holds_alternative<LLVMIRCLASSTYPE>(type)) {
+      throw std::runtime_error("In MX* language, class types are referenced by pointers");
+    }
+    os << " " << operand1_full << ", " << operand2_full << "\n";
+  }
+};
+class AllocaAction : public ActionItem {
+  friend class IRBuilder;
+  std::string name_full;
+  LLVMType type;
+  size_t num;
+
+ public:
+  AllocaAction() : num(1){};
+  void RecursivePrint(std::ostream &os) const {
+    os << name_full << " = alloca ";
+    if (std::holds_alternative<LLVMIRIntType>(type)) {
+      os << "i" << std::get<LLVMIRIntType>(type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(type)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    if (num > 1) {
+      os << ", i32 " << num;
+    }
+    os << "\n";
+  }
+};
+class LoadAction : public ActionItem {
+  friend class IRBuilder;
+  std::string result_full;
+  LLVMType ty;
+  std::string ptr_full;
+
+ public:
+  LoadAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = load ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << ", ptr " << ptr_full << '\n';
+  }
+};
+class StoreAction : public ActionItem {
+  friend class IRBuilder;
+  LLVMType ty;
+  std::string value_full;
+  std::string ptr_full;
+
+ public:
+  StoreAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "store ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << ' ' << value_full << ", ptr " << ptr_full << '\n';
+  }
+};
+class GetElementPtrAction : public ActionItem {
+  std::string result_full;
+  LLVMType ty;
+  std::string ptr_full;
+  std::vector<std::string> indices;
+
+ public:
+  GetElementPtrAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = getelementptr ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else if (std::holds_alternative<LLVMIRCLASSTYPE>(ty)) {
+      os << std::get<LLVMIRCLASSTYPE>(ty).class_name_full;
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << ", ptr " << ptr_full;
+    for (auto &index : indices) {
+      os << ", i32 " << index;
+    }
+    os << '\n';
+  }
+};
+class ICMPAction : public ActionItem {
+  friend class IRBuilder;
+  std::string op;
+  std::string operand1_full;
+  std::string operand2_full;
+  std::string result_full;
+  LLVMType type;
+
+ public:
+  ICMPAction() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = icmp " << op << " ";
+    if (std::holds_alternative<LLVMIRIntType>(type)) {
+      os << "i" << std::get<LLVMIRIntType>(type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(type)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << ' ' << operand1_full << ", " << operand2_full << '\n';
+  }
+};
+class BlockItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  std::string label_full;
+  std::vector<std::shared_ptr<ActionItem>> actions;
+  std::shared_ptr<JMPActionItem> exit_action;
+
+ public:
+  BlockItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << label_full << ":\n";
+    for (auto &action : actions) {
+      action->RecursivePrint(os);
+    }
+    if (exit_action) exit_action->RecursivePrint(os);
+  }
+};
+class CallItem : public ActionItem {
+  friend class IRBuilder;
+  std::string result_full;
+  LLVMType return_type;
+  std::string func_name_raw;
+  std::vector<LLVMType> args_ty;
+  std::vector<std::string> args_val_full;
+
+ public:
+  CallItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    if (std::holds_alternative<LLVMVOIDType>(return_type)) {
+      os << "call ";
+    } else {
+      os << result_full << " = call ";
+    }
+    if (std::holds_alternative<LLVMIRIntType>(return_type)) {
+      os << "i" << std::get<LLVMIRIntType>(return_type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(return_type)) {
+      os << "ptr";
+    } else if (std::holds_alternative<LLVMVOIDType>(return_type)) {
+      os << "void";
+    } else if (std::holds_alternative<LLVMIRCLASSTYPE>(return_type)) {
+      throw std::runtime_error("In MX* language, class types are referenced by pointers");
+    }
+    os << " @" << func_name_raw << "(";
+    for (size_t i = 0; i < args_val_full.size(); i++) {
+      auto &ty = args_ty[i];
+      if (std::holds_alternative<LLVMIRIntType>(ty)) {
+        os << "i" << std::get<LLVMIRIntType>(ty).bits;
+      } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+        os << "ptr";
+      } else if (std::holds_alternative<LLVMVOIDType>(ty)) {
+        throw std::runtime_error("void type is not allowed in function call");
+      } else if (std::holds_alternative<LLVMIRCLASSTYPE>(ty)) {
+        throw std::runtime_error("In MX* language, class types are referenced by pointers");
+      } else {
+        throw std::runtime_error("something strange happened");
+      }
+      os << ' ' << args_val_full[i];
+      if (i != args_val_full.size() - 1) {
+        os << ", ";
+      }
+    }
+    os << ")\n";
+  }
+};
+
+class PhiItem : public ActionItem {
+  std::string result_full;
+  LLVMType ty;
+  std::vector<std::pair<std::string, std::string>> values;  // (val_i_full, label_i_full)
+ public:
+  PhiItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = phi ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << " ";
+    for (size_t i = 0; i < values.size(); i++) {
+      os << " [" << values[i].first << ", " << values[i].second << "]";
+      if (i != values.size() - 1) {
+        os << ", ";
+      }
+    }
+    os << "\n";
+  }
+};
+class SelectItem : public ActionItem {
+  std::string result_full;
+  std::string cond_full;
+  std::string true_val_full;
+  std::string false_val_full;
+  LLVMType ty;
+
+ public:
+  SelectItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << result_full << " = select i1 " << cond_full << ", ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << " " << true_val_full << ", ";
+    if (std::holds_alternative<LLVMIRIntType>(ty)) {
+      os << "i" << std::get<LLVMIRIntType>(ty).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+      os << "ptr";
+    } else {
+      throw std::runtime_error("something strange happened");
+    }
+    os << false_val_full << "\n";
+  }
+};
+class FunctionDefItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  LLVMType return_type;
+  std::string func_name_raw;
+  std::vector<LLVMType> args;
+  std::vector<std::string> args_full_name;
+  std::vector<std::shared_ptr<BlockItem>> basic_blocks;
+
+ public:
+  FunctionDefItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "define ";
+    if (std::holds_alternative<LLVMIRIntType>(return_type)) {
+      os << "i" << std::get<LLVMIRIntType>(return_type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(return_type)) {
+      os << "ptr";
+    } else if (std::holds_alternative<LLVMVOIDType>(return_type)) {
+      os << "void";
+    } else if (std::holds_alternative<LLVMIRCLASSTYPE>(return_type)) {
+      throw std::runtime_error("In MX* language, class types are referenced by pointers");
+    }
+    os << " @" << func_name_raw << "(";
+    for (size_t i = 0; i < args.size(); i++) {
+      if (std::holds_alternative<LLVMIRIntType>(args[i])) {
+        os << "i" << std::get<LLVMIRIntType>(args[i]).bits;
+      } else if (std::holds_alternative<LLVMIRPTRType>(args[i])) {
+        os << "ptr";
+      } else if (std::holds_alternative<LLVMVOIDType>(args[i])) {
+        os << "void";
+      } else if (std::holds_alternative<LLVMIRCLASSTYPE>(args[i])) {
+        throw std::runtime_error("In MX* language, class types are referenced by pointers");
+      }
+      os << ' ' << args_full_name[i];
+      if (i != args.size() - 1) {
+        os << ",";
+      }
+    }
+    os << ")\n{\n";
+    for (auto &item : basic_blocks) {
+      item->RecursivePrint(os);
+    }
+    os << "}\n";
+  }
+};
+class FunctionDeclareItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  friend std::shared_ptr<class ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+  LLVMType return_type;
+  std::string func_name_raw;
+  std::vector<LLVMType> args;
+
+ public:
+  FunctionDeclareItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "declare ";
+    if (std::holds_alternative<LLVMIRIntType>(return_type)) {
+      os << "i" << std::get<LLVMIRIntType>(return_type).bits;
+    } else if (std::holds_alternative<LLVMIRPTRType>(return_type)) {
+      os << "ptr";
+    } else if (std::holds_alternative<LLVMVOIDType>(return_type)) {
+      os << "void";
+    } else if (std::holds_alternative<LLVMIRCLASSTYPE>(return_type)) {
+      throw std::runtime_error("In MX* language, class types are referenced by pointers");
+    }
+    os << " @" << func_name_raw << "(";
+    for (size_t i = 0; i < args.size(); i++) {
+      if (std::holds_alternative<LLVMIRIntType>(args[i])) {
+        os << "i" << std::get<LLVMIRIntType>(args[i]).bits;
+      } else if (std::holds_alternative<LLVMIRPTRType>(args[i])) {
+        os << "ptr";
+      } else if (std::holds_alternative<LLVMVOIDType>(args[i])) {
+        os << "void";
+      } else if (std::holds_alternative<LLVMIRCLASSTYPE>(args[i])) {
+        throw std::runtime_error("In MX* language, class types are referenced by pointers");
+      }
+      if (i != args.size() - 1) {
+        os << ",";
+      }
+    }
+    os << ")\n";
+  }
+};
 class ModuleItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+  std::vector<std::shared_ptr<FunctionDeclareItem>> function_declares;
   std::vector<std::shared_ptr<TypeDefItem>> type_defs;
   std::vector<std::shared_ptr<GlobalVarDefItem>> global_var_defs;
   std::vector<std::shared_ptr<FunctionDefItem>> function_defs;
 
  public:
+  ModuleItem() = default;
   void RecursivePrint(std::ostream &os) const {
+    for (auto &item : function_declares) {
+      item->RecursivePrint(os);
+    }
     for (auto &item : type_defs) {
       item->RecursivePrint(os);
       os << '\n';

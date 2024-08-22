@@ -3,7 +3,7 @@
 	.attribute	5, "rv32i2p1_m2p0_a2p1_c2p0"
 	.file	"builtin.c"
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	string.length                   # -- Begin function string.length
 	.p2align	1
 	.type	string.length,@function
@@ -23,7 +23,7 @@ string.length:                          # @string.length
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	string.substring                # -- Begin function string.substring
 	.p2align	1
 	.type	string.substring,@function
@@ -63,7 +63,7 @@ string.substring:                       # @string.substring
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	string.parseInt                 # -- Begin function string.parseInt
 	.p2align	1
 	.type	string.parseInt,@function
@@ -84,7 +84,7 @@ string.parseInt:                        # @string.parseInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	string.ord                      # -- Begin function string.ord
 	.p2align	1
 	.type	string.ord,@function
@@ -98,7 +98,7 @@ string.ord:                             # @string.ord
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	print                           # -- Begin function print
 	.p2align	1
 	.type	print,@function
@@ -115,7 +115,7 @@ print:                                  # @print
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	println                         # -- Begin function println
 	.p2align	1
 	.type	println,@function
@@ -132,7 +132,7 @@ println:                                # @println
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	printInt                        # -- Begin function printInt
 	.p2align	1
 	.type	printInt,@function
@@ -149,7 +149,7 @@ printInt:                               # @printInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	printlnInt                      # -- Begin function printlnInt
 	.p2align	1
 	.type	printlnInt,@function
@@ -166,7 +166,7 @@ printlnInt:                             # @printlnInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	toString                        # -- Begin function toString
 	.p2align	1
 	.type	toString,@function
@@ -196,7 +196,7 @@ toString:                               # @toString
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	getString                       # -- Begin function getString
 	.p2align	1
 	.type	getString,@function
@@ -300,7 +300,7 @@ getString:                              # @getString
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	getInt                          # -- Begin function getInt
 	.p2align	1
 	.type	getInt,@function
@@ -321,7 +321,7 @@ getInt:                                 # @getInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	.builtin.AllocateClassBody      # -- Begin function .builtin.AllocateClassBody
 	.p2align	1
 	.type	.builtin.AllocateClassBody,@function
@@ -333,7 +333,7 @@ getInt:                                 # @getInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	.builtin.GetArrayLength         # -- Begin function .builtin.GetArrayLength
 	.p2align	1
 	.type	.builtin.GetArrayLength,@function
@@ -355,7 +355,7 @@ getInt:                                 # @getInt
                                         # -- End function
 	.option	pop
 	.option	push
-	.option	arch, +a, +c, +m
+	.option	arch, +a, +c
 	.globl	.builtin.RecursiveAllocateArray # -- Begin function .builtin.RecursiveAllocateArray
 	.p2align	1
 	.type	.builtin.RecursiveAllocateArray,@function

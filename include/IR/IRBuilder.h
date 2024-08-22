@@ -1,10 +1,31 @@
+#pragma once
 #include <memory>
 #include "IR_basic.h"
 #include "ast/astnode_visitor.h"
 class IRBuilder : public ASTNodeVirturalVisitor {
+  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
   std::shared_ptr<ModuleItem> prog;
+  std::shared_ptr<TypeDefItem> cur_class;
+  std::shared_ptr<FunctionDefItem> cur_func;
+  std::shared_ptr<BlockItem> cur_block;
+  std::string cur_class_name;
+  bool is_in_class_def;
+  bool is_in_func_def;
+  size_t tmp_var_counter;
+  size_t block_counter;
+  std::string cur_break_target;
+  std::string cur_continue_target;
+  bool just_encountered_jmp;
+  std::shared_ptr<GlobalScope> global_scope;
 
  public:
+  IRBuilder() {
+    tmp_var_counter = 0;
+    block_counter = 0;
+    is_in_class_def = false;
+    is_in_func_def = false;
+    just_encountered_jmp = false;
+  }
   // Structural AST Nodes
   void ActuralVisit(FuncDef_ASTNode *node) override;
   void ActuralVisit(ClassDef_ASTNode *node) override;

@@ -14,6 +14,7 @@ class ScopeBase {
   friend class ClassDefScope;
   friend class GlobalScope;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
 
  protected:
   ScopeBase *parent;  // cannot use std::shared_ptr<ScopeBase> because of circular dependency
@@ -21,15 +22,17 @@ class ScopeBase {
   virtual bool VariableNameAvailable(const std::string &name, int ttl) = 0;
   virtual bool add_variable(const std::string &name, const ExprTypeInfo &type) = 0;
   virtual ExprTypeInfo fetch_varaible(const std::string &name) = 0;
+  virtual IRVariableInfo fetch_variable_for_IR(const std::string &name) = 0;
   static inline bool IsKeyWord(const std::string &name) {
     static const std::unordered_set<std::string> keywords = {"void", "bool",  "int",   "string",   "new",   "class",
                                                              "null", "true",  "false", "this",     "if",    "else",
                                                              "for",  "while", "break", "continue", "return"};
     return keywords.find(name) != keywords.end();
   }
-  public:
+
+ public:
   ScopeBase() {
-    static size_t scope_counter=0;
+    static size_t scope_counter = 0;
     scope_id = scope_counter++;
   }
 };
@@ -55,6 +58,17 @@ class LocalScope : public ScopeBase {
       return local_variables[name];
     }
     return parent->fetch_varaible(name);
+  }
+  IRVariableInfo fetch_variable_for_IR(const std::string &name) override {
+    if (local_variables.find(name) != local_variables.end()) {
+      IRVariableInfo res;
+      res.variable_name_raw = name;
+      res.scope_id = scope_id;
+      res.variable_type = 1;
+      res.ty = Type_AST2LLVM(local_variables[name]);
+      return res;
+    }
+    return parent->fetch_variable_for_IR(name);
   }
   bool VariableNameAvailable(const std::string &name, int ttl) override {
     if (ttl == 0 && IsKeyWord(name)) {
@@ -89,6 +103,19 @@ class FunctionScope : public ScopeBase {
       }
     }
     return parent->fetch_varaible(name);
+  }
+  IRVariableInfo fetch_variable_for_IR(const std::string &name) override {
+    for (const auto &arg : schema.arguments) {
+      if (arg.second == name) {
+        IRVariableInfo res;
+        res.variable_name_raw = name;
+        res.scope_id = scope_id;
+        res.variable_type = 3;
+        res.ty = Type_AST2LLVM(arg.first);
+        return res;
+      }
+    }
+    return parent->fetch_variable_for_IR(name);
   }
   bool VariableNameAvailable(const std::string &name, int ttl) override {
     if (ttl == 0 && IsKeyWord(name)) {
@@ -131,6 +158,17 @@ class ClassDefScope : public ScopeBase {
     }
     return parent->fetch_varaible(name);
   }
+  IRVariableInfo fetch_variable_for_IR(const std::string &name) override {
+    if (member_variables.find(name) != member_variables.end()) {
+      IRVariableInfo res;
+      res.variable_name_raw = name;
+      res.scope_id = scope_id;
+      res.variable_type = 2;
+      res.ty = Type_AST2LLVM(member_variables[name]);
+      return res;
+    }
+    return parent->fetch_variable_for_IR(name);
+  }
   bool add_function(const std::string &name, std::shared_ptr<FunctionScope> ptr) {
     if (IsKeyWord(name)) return false;
     if (member_variables.find(name) != member_variables.end()) {
@@ -162,6 +200,7 @@ class ClassDefScope : public ScopeBase {
 class GlobalScope : public ScopeBase {
   friend class Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
   std::unordered_map<std::string, ExprTypeInfo> global_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> global_functions;
@@ -256,6 +295,17 @@ class GlobalScope : public ScopeBase {
       return global_variables[name];
     }
     throw SemanticError("Undefined Identifier", 1);
+  }
+  IRVariableInfo fetch_variable_for_IR(const std::string &name) override {
+    if (global_variables.find(name) != global_variables.end()) {
+      IRVariableInfo res;
+      res.variable_name_raw = name;
+      res.scope_id = scope_id;
+      res.variable_type = 0;
+      res.ty = Type_AST2LLVM(global_variables[name]);
+      return res;
+    }
+    return parent->fetch_variable_for_IR(name);
   }
 
  public:

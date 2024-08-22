@@ -1,4 +1,5 @@
 #pragma once
+#include <bits/types/struct_sched_param.h>
 #include <stdexcept>
 #include <unordered_map>
 #include <variant>
@@ -101,10 +102,21 @@ inline bool operator==(const ExprTypeInfo &l, const ExprTypeInfo &r) {
   throw std::runtime_error("something strange happened");
 }
 inline bool operator!=(const ExprTypeInfo &l, const ExprTypeInfo &r) { return !(l == r); }
-
+class LLVMIRIntType {
+ public:
+  size_t bits;
+  LLVMIRIntType() = default;
+  LLVMIRIntType(size_t bits) : bits(bits) {}
+};
+struct LLVMIRPTRType {};
+struct LLVMVOIDType {};
+struct LLVMIRCLASSTYPE {
+  std::string class_name_full;
+};
+using LLVMType = std::variant<LLVMIRIntType, LLVMIRPTRType, LLVMVOIDType, LLVMIRCLASSTYPE>;
 class IRClassInfo {
  public:
-  std::string class_name;               // This data must be provided by user
+  std::string class_name_raw;           // This data must be provided by user
   std::vector<size_t> member_var_size;  // This data must be provided by user. Each of them is the size of a member
                                         // variable, which must be in [1,4]
   std::unordered_map<std::string, size_t> member_var_offset;  // This data must be provided by user
@@ -128,10 +140,36 @@ class IRClassInfo {
       class_size_after_align = cur_pos;
     }
   }
+  std::string GenerateFullName() { return "%.class." + class_name_raw; }
 };
 class IRVariableInfo {
  public:
   enum class VariableType { global_variable, local_variable, member_variable };
   std::string class_name;
-  std::string variable_name;
+  std::string variable_name_raw;
+  size_t scope_id;
+  uint8_t variable_type;  // 0: global, 1: local, 2: member, 3: argument
+  LLVMType ty;
+  std::string GenerateFullName() {
+    if (variable_type == 2) {
+      throw std::runtime_error("Member variable should not be used in this function");
+    } else if (variable_type == 0) {
+      return "@.var.global." + variable_name_raw + ".addrkp";
+    } else if (variable_type == 1) {
+      return "%.var.local." + std::to_string(scope_id) + "." + variable_name_raw + ".addrkp";
+    } else if (variable_type == 3) {
+      return "%.var.local." + std::to_string(scope_id) + "." + variable_name_raw + ".val";
+    } else {
+      throw std::runtime_error("Invalid scope id");
+    }
+  }
 };
+
+inline LLVMType Type_AST2LLVM(const ExprTypeInfo &src) {
+  if (std::holds_alternative<ArrayType>(src)) return LLVMIRPTRType();
+  std::string tname = std::get<IdentifierType>(src);
+  if (tname == "bool") return LLVMIRIntType(1);
+  if (tname == "int") return LLVMIRIntType(32);
+  if (tname == "void") return LLVMVOIDType();
+  return LLVMIRPTRType();
+}

@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
   try {
     SemanticCheck(fin, ast);
     auto IR = BuildIR(ast);
+    IR->RecursivePrint(std::cout);
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;
     return err.GetErrorCode();

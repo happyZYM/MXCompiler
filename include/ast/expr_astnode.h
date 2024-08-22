@@ -8,11 +8,14 @@
 class Expr_ASTNode : public ASTNodeBase {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   ExprTypeInfo expr_type_info;
   bool assignable;
+  std::string IR_result_full;
+  bool is_requiring_lvalue;
 
  public:
-  Expr_ASTNode() : assignable(false){};
+  Expr_ASTNode() : assignable(false), is_requiring_lvalue(false){};
   virtual ~Expr_ASTNode() = default;
 };
 
@@ -21,6 +24,7 @@ class BasicExpr_ASTNode : public Expr_ASTNode {};  // This is a virtual class
 class NewArrayExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   bool has_initial_value;
   std::vector<std::shared_ptr<Expr_ASTNode>> dim_size;
   std::shared_ptr<class ConstantExpr_ASTNode> initial_value;
@@ -33,6 +37,7 @@ class NewArrayExpr_ASTNode : public Expr_ASTNode {
 class NewConstructExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
 
  public:
   NewConstructExpr_ASTNode() = default;
@@ -42,6 +47,7 @@ class NewConstructExpr_ASTNode : public Expr_ASTNode {
 class NewExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
 
  public:
   NewExpr_ASTNode() = default;
@@ -51,6 +57,7 @@ class NewExpr_ASTNode : public Expr_ASTNode {
 class AccessExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> base;
   IdentifierType member;
   bool is_function;
@@ -64,6 +71,7 @@ class AccessExpr_ASTNode : public Expr_ASTNode {
 class IndexExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> base;
   std::vector<std::shared_ptr<Expr_ASTNode>> indices;
 
@@ -75,6 +83,7 @@ class IndexExpr_ASTNode : public Expr_ASTNode {
 class SuffixExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> base;
 
@@ -86,6 +95,7 @@ class SuffixExpr_ASTNode : public Expr_ASTNode {
 class PrefixExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> base;
 
@@ -97,6 +107,7 @@ class PrefixExpr_ASTNode : public Expr_ASTNode {
 class OppositeExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> base;
 
  public:
@@ -107,6 +118,7 @@ class OppositeExpr_ASTNode : public Expr_ASTNode {
 class LNotExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> base;
 
  public:
@@ -117,6 +129,7 @@ class LNotExpr_ASTNode : public Expr_ASTNode {
 class BNotExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> base;
 
  public:
@@ -127,6 +140,7 @@ class BNotExpr_ASTNode : public Expr_ASTNode {
 class MDMExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -139,6 +153,7 @@ class MDMExpr_ASTNode : public Expr_ASTNode {
 class PMExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -151,6 +166,7 @@ class PMExpr_ASTNode : public Expr_ASTNode {
 class RLExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -163,6 +179,7 @@ class RLExpr_ASTNode : public Expr_ASTNode {
 class GGLLExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -175,6 +192,7 @@ class GGLLExpr_ASTNode : public Expr_ASTNode {
 class NEExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -187,6 +205,7 @@ class NEExpr_ASTNode : public Expr_ASTNode {
 class BAndExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -199,6 +218,7 @@ class BAndExpr_ASTNode : public Expr_ASTNode {
 class BXorExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -211,6 +231,7 @@ class BXorExpr_ASTNode : public Expr_ASTNode {
 class BOrExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -223,6 +244,7 @@ class BOrExpr_ASTNode : public Expr_ASTNode {
 class LAndExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -235,6 +257,7 @@ class LAndExpr_ASTNode : public Expr_ASTNode {
 class LOrExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> left;
   std::shared_ptr<Expr_ASTNode> right;
@@ -247,6 +270,7 @@ class LOrExpr_ASTNode : public Expr_ASTNode {
 class TernaryExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> condition;
   std::shared_ptr<Expr_ASTNode> src1;
   std::shared_ptr<Expr_ASTNode> src2;
@@ -259,6 +283,7 @@ class TernaryExpr_ASTNode : public Expr_ASTNode {
 class AssignExpr_ASTNode : public Expr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::string op;
   std::shared_ptr<Expr_ASTNode> dest;
   std::shared_ptr<Expr_ASTNode> src;
@@ -271,6 +296,7 @@ class AssignExpr_ASTNode : public Expr_ASTNode {
 class ThisExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
 
  public:
   ThisExpr_ASTNode() = default;
@@ -280,6 +306,7 @@ class ThisExpr_ASTNode : public BasicExpr_ASTNode {
 class ParenExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::shared_ptr<Expr_ASTNode> expr;
 
  public:
@@ -290,6 +317,7 @@ class ParenExpr_ASTNode : public BasicExpr_ASTNode {
 class IDExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   IdentifierType id;
 
  public:
@@ -300,6 +328,7 @@ class IDExpr_ASTNode : public BasicExpr_ASTNode {
 class FunctionCallExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   IdentifierType func_name;
   std::vector<std::shared_ptr<Expr_ASTNode>> arguments;
 
@@ -311,6 +340,7 @@ class FunctionCallExpr_ASTNode : public BasicExpr_ASTNode {
 class FormattedStringExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   std::vector<std::string> literals;
   std::vector<std::shared_ptr<Expr_ASTNode>> exprs;
 
@@ -326,6 +356,7 @@ using AtomicConstantType = std::variant<uint32_t, bool, std::string, NullType>;
 class ConstantExpr_ASTNode : public BasicExpr_ASTNode {
   friend Visitor;
   friend class ASTSemanticCheckVisitor;
+  friend class IRBuilder;
   size_t level;
   std::variant<AtomicConstantType, std::vector<std::shared_ptr<ConstantExpr_ASTNode>>> value;
 

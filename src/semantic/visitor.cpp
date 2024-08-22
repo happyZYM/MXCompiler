@@ -249,7 +249,7 @@ std::any Visitor::visitClass_var_def(MXParser::Class_var_defContext *context) {
 std::any Visitor::visitClass_constructor(MXParser::Class_constructorContext *context) {
   auto construct_func = std::make_shared<FuncDef_ASTNode>();
   construct_func->type = ASTNodeType::Constructor;
-  construct_func->is_constructor = false;
+  construct_func->is_constructor = true;
   construct_func->start_line = context->getStart()->getLine();
   construct_func->start_char_pos = context->getStart()->getCharPositionInLine();
   construct_func->end_line = context->getStop()->getLine();
@@ -259,6 +259,7 @@ std::any Visitor::visitClass_constructor(MXParser::Class_constructorContext *con
   construct_func->current_scope = cur_scope;
   construct_func->func_name = context->ID()->getText();
   cur_scope->schema.return_type = "void";
+  construct_func->return_type = "void";
   nodetype_stk.push_back({ASTNodeType::Constructor, construct_func->current_scope});
 
   construct_func->func_body = std::dynamic_pointer_cast<SuiteStatement_ASTNode>(
@@ -476,8 +477,7 @@ std::any Visitor::visitDefine_statement(MXParser::Define_statementContext *conte
   assert(nodetype_stk.size() > 0);
   def_stmt->current_scope = nodetype_stk.back().second;
   if (nodetype_stk.size() > 0 && (nodetype_stk.back().first == ASTNodeType::IfStatement ||
-                                  nodetype_stk.back().first == ASTNodeType::WhileStatement ||
-                                  nodetype_stk.back().first == ASTNodeType::ForStatement)) {
+                                  nodetype_stk.back().first == ASTNodeType::WhileStatement)) {
     def_stmt->current_scope = std::make_shared<LocalScope>();
     def_stmt->current_scope->parent = nodetype_stk.back().second.get();
   }
