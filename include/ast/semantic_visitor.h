@@ -1,9 +1,9 @@
 #pragma once
 #include "astnode.h"
+#include "astnode_visitor.h"
 #include "expr_astnode.h"
 #include "statement_astnode.h"
 #include "structural_astnode.h"
-#include "astnode_visitor.h"
 
 class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
   bool is_in_func_def;
@@ -21,7 +21,7 @@ class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
   }
 
  public:
-  ASTSemanticCheckVisitor() : is_in_func_def(false), loop_level(0) {}
+  ASTSemanticCheckVisitor() : is_in_func_def(false), loop_level(0), is_in_class_def(false) {}
   // Structural AST Nodes
   void ActuralVisit(FuncDef_ASTNode *node) override;
   void ActuralVisit(ClassDef_ASTNode *node) override;

@@ -1,5 +1,6 @@
 #pragma once
 #include <bits/types/struct_sched_param.h>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 #include <variant>
@@ -172,4 +173,32 @@ inline LLVMType Type_AST2LLVM(const ExprTypeInfo &src) {
   if (tname == "int") return LLVMIRIntType(32);
   if (tname == "void") return LLVMVOIDType();
   return LLVMIRPTRType();
+}
+
+inline std::string StringLiteralDeEscape(const std::string src) {
+  std::stringstream ss;
+  for (size_t i = 1; i < src.size() - 1; i++) {
+    if (src[i] != '\\')
+      ss << src[i];
+    else {
+      i++;
+      if (src[i] == 'n')
+        ss << '\n';
+      else if (src[i] == 'r')
+        ss << '\r';
+      else if (src[i] == 't')
+        ss << '\t';
+      else if (src[i] == '\\')
+        ss << '\\';
+      else if (src[i] == '\'')
+        ss << '\'';
+      else if (src[i] == '\"')
+        ss << '\"';
+      else if (src[i] == '0')
+        ss << '\0';
+      else
+        throw std::runtime_error("Invalid escape character");
+    }
+  }
+  return ss.str();
 }

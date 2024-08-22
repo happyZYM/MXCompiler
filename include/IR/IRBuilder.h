@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
+#include <stdexcept>
 #include "IR_basic.h"
 #include "ast/astnode_visitor.h"
+#include "tools.h"
 class IRBuilder : public ASTNodeVirturalVisitor {
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
   std::shared_ptr<ModuleItem> prog;
@@ -17,6 +19,9 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   std::string cur_continue_target;
   bool just_encountered_jmp;
   std::shared_ptr<GlobalScope> global_scope;
+  size_t const_str_counter;
+  std::unordered_map<std::string, size_t> const_str_dict;
+  size_t const_arr_counter;
 
  public:
   IRBuilder() {
@@ -25,6 +30,8 @@ class IRBuilder : public ASTNodeVirturalVisitor {
     is_in_class_def = false;
     is_in_func_def = false;
     just_encountered_jmp = false;
+    const_str_counter = 0;
+    const_arr_counter = 0;
   }
   // Structural AST Nodes
   void ActuralVisit(FuncDef_ASTNode *node) override;
@@ -70,6 +77,61 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   void ActuralVisit(FunctionCallExpr_ASTNode *node) override;
   void ActuralVisit(FormattedStringExpr_ASTNode *node) override;
   void ActuralVisit(ConstantExpr_ASTNode *node) override;
+  std::string ArrangeConstArrDfs(BlockItem &blk, ConstantExpr_ASTNode *node, size_t depth, size_t total_level,
+                                 LLVMType basetype) {
+    if (std::holds_alternative<AtomicConstantType>(node->value)) {
+      node->accept(this);
+      return node->IR_result_full;
+    }
+    LLVMType ty;
+    size_t elem_size;
+    if (depth + 1 == total_level) {
+      ty = basetype;
+      if (std::holds_alternative<LLVMIRIntType>(ty)) {
+        elem_size = (std::get<LLVMIRIntType>(ty).bits + 7) / 8;
+      } else if (std::holds_alternative<LLVMIRPTRType>(ty)) {
+        elem_size = 4;
+      } else {
+        throw std::runtime_error("Unexpected type in const array");
+      }
+    } else {
+      ty = LLVMIRPTRType();
+      elem_size = 4;
+    }
+    auto& sub_nodes=std::get<std::vector<std::shared_ptr<ConstantExpr_ASTNode>>>(node->value);
+    std::string array_head = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    auto allocate_action=std::make_shared<CallItem>();
+    blk.actions.push_back(allocate_action);
+    allocate_action->func_name_raw=".builtin.AllocateArray";
+    allocate_action->result_full=array_head;
+    allocate_action->return_type=LLVMIRPTRType();
+    allocate_action->args_ty.push_back(LLVMIRIntType(32));
+    allocate_action->args_val_full.push_back(std::to_string(elem_size));
+    allocate_action->args_ty.push_back(LLVMIRIntType(32));
+    allocate_action->args_val_full.push_back(std::to_string(sub_nodes.size()));
+    for(size_t i=0;i<sub_nodes.size();i++) {
+      std::string ret=ArrangeConstArrDfs(blk, sub_nodes[i].get(), depth+1, total_level, basetype);
+      std::string addr="%.var.tmp." + std::to_string(tmp_var_counter++);
+      auto ptr_cal=std::make_shared<GetElementPtrAction>();
+      blk.actions.push_back(ptr_cal);
+      ptr_cal->result_full=addr;
+      ptr_cal->ty=ty;
+      ptr_cal->ptr_full=array_head;
+      ptr_cal->indices.push_back(std::to_string(i));
+      auto store_action=std::make_shared<StoreAction>();
+      blk.actions.push_back(store_action);
+      store_action->ty=ty;
+      store_action->ptr_full=addr;
+      store_action->value_full=ret;
+    }
+
+    return allocate_action->result_full;
+  }
+  void ArrangeConstArr(BlockItem &blk, ConstantExpr_ASTNode *node) {
+    ArrayType tp = std::get<ArrayType>(node->expr_type_info);
+    std::dynamic_pointer_cast<RETAction>(blk.exit_action)->value =
+        ArrangeConstArrDfs(blk, node, 0, tp.level, Type_AST2LLVM(tp.basetype));
+  }
 };
 
 std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);

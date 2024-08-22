@@ -434,6 +434,37 @@ getInt:                                 # @getInt
 	.size	.builtin.RecursiveAllocateArray, .Lfunc_end13-.builtin.RecursiveAllocateArray
                                         # -- End function
 	.option	pop
+	.option	push
+	.option	arch, +a, +c
+	.globl	.builtin.AllocateArray          # -- Begin function .builtin.AllocateArray
+	.p2align	1
+	.type	.builtin.AllocateArray,@function
+.builtin.AllocateArray:                 # @.builtin.AllocateArray
+# %bb.0:
+	addi	sp, sp, -16
+	sw	ra, 12(sp)                      # 4-byte Folded Spill
+	sw	s0, 8(sp)                       # 4-byte Folded Spill
+	mv	s0, a1
+	mul	a0, a1, a0
+	addi	a0, a0, 4
+	call	malloc
+	sb	s0, 0(a0)
+	srli	a1, s0, 8
+	sb	a1, 1(a0)
+	srli	a1, s0, 16
+	sb	a1, 2(a0)
+	srli	s0, s0, 24
+	addi	a1, a0, 4
+	sb	s0, 3(a0)
+	mv	a0, a1
+	lw	ra, 12(sp)                      # 4-byte Folded Reload
+	lw	s0, 8(sp)                       # 4-byte Folded Reload
+	addi	sp, sp, 16
+	ret
+.Lfunc_end14:
+	.size	.builtin.AllocateArray, .Lfunc_end14-.builtin.AllocateArray
+                                        # -- End function
+	.option	pop
 	.type	.L.str,@object                  # @.str
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .L.str:

@@ -113,6 +113,14 @@ void* _builtin_RecursiveAllocateArray(int dims_with_size, int element_size, int*
   }
   return res;
 }
+void* _builtin_AllocateArray(int element_size, int element_num) {
+  void* res=malloc(element_size*element_num+4);
+  ((unsigned char*)res)[0] = element_num&0xff;
+  ((unsigned char*)res)[1] = (element_num>>8)&0xff;
+  ((unsigned char*)res)[2] = (element_num>>16)&0xff;
+  ((unsigned char*)res)[3] = (element_num>>24)&0xff;
+  return ((char*)res)+4;
+}
 // void* _builtin_AllocateArray(int total_dimensions,int basic_element_size,...) {
 //   va_list args;
 //   va_start(args, basic_element_size);

@@ -103,11 +103,20 @@ void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
       var_def->name_full = "%.var.local." + std::to_string(node->current_scope->scope_id) + "." + var.first + ".addrkp";
       if (var.second) {
         var.second->accept(this);
+        std::string init_var = var.second->IR_result_full;
+        if (init_var[0] == '#') {
+          init_var = "%.var.tmp." + std::to_string(tmp_var_counter++);
+          auto const_array_construct_call = std::make_shared<CallItem>();
+          cur_block->actions.push_back(const_array_construct_call);
+          const_array_construct_call->result_full = init_var;
+          const_array_construct_call->return_type = LLVMIRPTRType();
+          const_array_construct_call->func_name_raw = var.second->IR_result_full.substr(1);
+        }
         auto act = std::make_shared<StoreAction>();
         cur_block->actions.push_back(act);
         act->ty = var_def->type;
         act->ptr_full = var_def->name_full;
-        act->value_full = var.second->IR_result_full;
+        act->value_full = init_var;
       }
     }
   }
@@ -309,7 +318,74 @@ void IRBuilder::ActuralVisit(SuiteStatement_ASTNode *node) {
 
 // Expression AST Nodes
 void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
-  // TODO: Implement function body
+  if (node->initial_value) {
+    node->initial_value->accept(this);  // Just visit it
+    node->IR_result_full = node->initial_value->IR_result_full;
+    return;
+  }
+  std::string constructing_func_name = ".constarr." + std::to_string(const_arr_counter++);
+  auto cons_func = std::make_shared<FunctionDefItem>();
+  prog->function_defs.push_back(cons_func);
+  cons_func->func_name_raw = constructing_func_name;
+  cons_func->return_type = LLVMIRPTRType();
+  auto block = std::make_shared<BlockItem>();
+  cons_func->basic_blocks.push_back(block);
+  block->label_full = "label_constarr_" + std::to_string(const_arr_counter - 1);
+  block->exit_action = std::make_shared<RETAction>();
+  std::dynamic_pointer_cast<RETAction>(block->exit_action)->type = LLVMIRPTRType();
+
+  std::vector<std::string> dim_size_info;
+  for (size_t i = 0; i < node->dim_size.size(); i++) {
+    if (!(node->dim_size[i])) break;
+    node->dim_size[i]->accept(this);
+    dim_size_info.push_back(node->dim_size[i]->IR_result_full);
+  }
+  int dims_with_size = dim_size_info.size();
+  int element_size = 4;
+  if (dims_with_size == node->dim_size.size()) {
+    ArrayType tp = std::get<ArrayType>(node->expr_type_info);
+    std::string base_type = tp.basetype;
+    if (base_type == "bool") element_size = 1;
+  }
+
+  auto dim_info = std::make_shared<AllocaAction>();
+  std::string dim_info_var = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  block->actions.push_back(dim_info);
+  dim_info->num = dims_with_size;
+  dim_info->name_full = dim_info_var;
+  dim_info->type = LLVMIRIntType(32);
+  for (size_t i = 0; i < dim_size_info.size(); i++) {
+    std::string cur_ptr = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    auto get_addr = std::make_shared<GetElementPtrAction>();
+    block->actions.push_back(get_addr);
+    get_addr->result_full = cur_ptr;
+    get_addr->ty = LLVMIRIntType(32);
+    get_addr->ptr_full = dim_info_var;
+    get_addr->indices.push_back(std::to_string(i));
+    auto store_act = std::make_shared<StoreAction>();
+    block->actions.push_back(store_act);
+    store_act->ty = LLVMIRIntType(32);
+    store_act->ptr_full = cur_ptr;
+    store_act->value_full = dim_size_info[i];
+  }
+  auto allocate_call = std::make_shared<CallItem>();
+  block->actions.push_back(allocate_call);
+  allocate_call->func_name_raw = ".builtin.RecursiveAllocateArray";
+  allocate_call->return_type = LLVMIRPTRType();
+  std::string res = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  allocate_call->result_full = res;
+  allocate_call->args_ty.push_back(LLVMIRIntType(32));
+  allocate_call->args_val_full.push_back(std::to_string(dims_with_size));
+  allocate_call->args_ty.push_back(LLVMIRIntType(32));
+  allocate_call->args_val_full.push_back(std::to_string(element_size));
+  allocate_call->args_ty.push_back(LLVMIRPTRType());
+  allocate_call->args_val_full.push_back(dim_info_var);
+  auto ret = std::make_shared<RETAction>();
+  block->exit_action = ret;
+  ret->type = LLVMIRPTRType();
+  ret->value = res;
+
+  node->IR_result_full = "#" + constructing_func_name;
 }
 
 void IRBuilder::ActuralVisit(NewConstructExpr_ASTNode *node) {
@@ -325,7 +401,44 @@ void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(IndexExpr_ASTNode *node) {
-  // TODO: Implement function body
+  node->base->accept(this);
+  std::string cur_val = node->base->IR_result_full;
+  std::string cur_addr;
+  for (size_t i = 0; i < node->indices.size(); i++) {
+    LLVMType cur_ty;
+    if (i + 1 < node->indices.size())
+      cur_ty = LLVMIRPTRType();
+    else {
+      ArrayType tp = std::get<ArrayType>(node->base->expr_type_info);
+      if (tp.basetype == "bool")
+        cur_ty = LLVMIRIntType(1);
+      else if (tp.basetype == "int")
+        cur_ty = LLVMIRIntType(32);
+      else
+        cur_ty = LLVMIRPTRType();
+    }
+    node->indices[i]->accept(this);
+    std::string idx = node->indices[i]->IR_result_full;
+    cur_addr = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    auto addr_cal = std::make_shared<GetElementPtrAction>();
+    cur_block->actions.push_back(addr_cal);
+    addr_cal->result_full = cur_addr;
+    addr_cal->ty = cur_ty;
+    addr_cal->ptr_full = cur_val;
+    addr_cal->indices.push_back(idx);
+    if (i + 1 == node->indices.size() && node->is_requiring_lvalue) break;
+    auto val_load = std::make_shared<LoadAction>();
+    cur_val = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    cur_block->actions.push_back(val_load);
+    val_load->result_full = cur_val;
+    val_load->ty = cur_ty;
+    val_load->ptr_full = cur_addr;
+  }
+  if (node->is_requiring_lvalue) {
+    node->IR_result_full = cur_addr;
+  } else {
+    node->IR_result_full = cur_val;
+  }
 }
 
 void IRBuilder::ActuralVisit(SuffixExpr_ASTNode *node) {
@@ -605,14 +718,24 @@ void IRBuilder::ActuralVisit(AssignExpr_ASTNode *node) {
   node->dest->accept(this);
   node->src->accept(this);
   auto act = std::make_shared<StoreAction>();
-  cur_block->actions.push_back(act);
   act->ptr_full = node->dest->IR_result_full;
-  act->value_full = node->src->IR_result_full;
+  std::string src = node->src->IR_result_full;
+  if (src[0] == '#') {
+    src = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    auto const_array_construct_call = std::make_shared<CallItem>();
+    cur_block->actions.push_back(const_array_construct_call);
+    const_array_construct_call->result_full = src;
+    const_array_construct_call->return_type = LLVMIRPTRType();
+    const_array_construct_call->func_name_raw = node->src->IR_result_full.substr(1);
+  }
+  cur_block->actions.push_back(act);
+  act->value_full = src;
   act->ty = Type_AST2LLVM(node->src->expr_type_info);
 }
 
 void IRBuilder::ActuralVisit(ThisExpr_ASTNode *node) {
   // TODO: Implement function body
+  throw std::runtime_error("this not supported");
 }
 
 void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
@@ -676,6 +799,7 @@ void IRBuilder::ActuralVisit(FunctionCallExpr_ASTNode *node) {
 
 void IRBuilder::ActuralVisit(FormattedStringExpr_ASTNode *node) {
   // TODO: Implement function body
+  throw std::runtime_error("formatted string not supported");
 }
 
 void IRBuilder::ActuralVisit(ConstantExpr_ASTNode *node) {
@@ -689,16 +813,33 @@ void IRBuilder::ActuralVisit(ConstantExpr_ASTNode *node) {
     } else if (std::holds_alternative<bool>(val)) {
       node->IR_result_full = std::to_string(int(std::get<bool>(val)));
     } else if (std::holds_alternative<std::string>(val)) {
-      // TODO: string constant
-      throw std::runtime_error("String constant not supported");
+      std::string str = StringLiteralDeEscape(std::get<std::string>(val));
+      if (const_str_dict.find(str) == const_str_dict.end()) {
+        const_str_dict[str] = const_str_counter++;
+        auto const_str_item = std::make_shared<ConstStrItem>();
+        prog->const_strs.push_back(const_str_item);
+        const_str_item->string_raw = str;
+        const_str_item->const_str_id = const_str_dict[str];
+      }
+      node->IR_result_full = "@.str." + std::to_string(const_str_dict[str]);
     } else if (std::holds_alternative<NullType>(val)) {
       node->IR_result_full = "null";
     } else {
       throw std::runtime_error("unknown constant type");
     }
   } else {
-    // TODO: array constant
-    throw std::runtime_error("Array constant not supported");
+    std::string constructing_func_name = ".constarr." + std::to_string(const_arr_counter++);
+    auto cons_func = std::make_shared<FunctionDefItem>();
+    prog->function_defs.push_back(cons_func);
+    cons_func->func_name_raw = constructing_func_name;
+    cons_func->return_type = LLVMIRPTRType();
+    auto block = std::make_shared<BlockItem>();
+    cons_func->basic_blocks.push_back(block);
+    block->label_full = "label_constarr_" + std::to_string(const_arr_counter - 1);
+    block->exit_action = std::make_shared<RETAction>();
+    std::dynamic_pointer_cast<RETAction>(block->exit_action)->type = LLVMIRPTRType();
+    ArrangeConstArr(*block, node);
+    node->IR_result_full = "#" + constructing_func_name;
   }
 }
 
@@ -718,6 +859,19 @@ std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src) {
   tmp = std::make_shared<FunctionDeclareItem>();
   tmp->func_name_raw = "print";
   tmp->return_type = LLVMVOIDType();
+  tmp->args.push_back(LLVMIRPTRType());
+  visitor.prog->function_declares.push_back(tmp);
+  tmp = std::make_shared<FunctionDeclareItem>();
+  tmp->func_name_raw = ".builtin.AllocateArray";
+  tmp->return_type = LLVMIRPTRType();
+  tmp->args.push_back(LLVMIRIntType(32));
+  tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+  tmp = std::make_shared<FunctionDeclareItem>();
+  tmp->func_name_raw = ".builtin.RecursiveAllocateArray";
+  tmp->return_type = LLVMIRPTRType();
+  tmp->args.push_back(LLVMIRIntType(32));
+  tmp->args.push_back(LLVMIRIntType(32));
   tmp->args.push_back(LLVMIRPTRType());
   visitor.prog->function_declares.push_back(tmp);
   visitor.global_scope = std::dynamic_pointer_cast<GlobalScope>(src->current_scope);

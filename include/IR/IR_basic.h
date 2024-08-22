@@ -3,8 +3,10 @@
 #include <ios>
 #include <list>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 #include "ast/astnode.h"
@@ -192,6 +194,7 @@ class StoreAction : public ActionItem {
   }
 };
 class GetElementPtrAction : public ActionItem {
+  friend class IRBuilder;
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
@@ -241,6 +244,7 @@ class ICMPAction : public ActionItem {
 };
 class BlockItem : public LLVMIRItemBase {
   friend class IRBuilder;
+  friend void ArrangeConstArr(BlockItem &blk, class ConstantExpr_ASTNode *node, size_t &tmp_var_counter);
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
@@ -439,9 +443,41 @@ class FunctionDeclareItem : public LLVMIRItemBase {
     os << ")\n";
   }
 };
+class ConstStrItem : public LLVMIRItemBase {
+  friend class IRBuilder;
+  std::string string_raw;
+  size_t const_str_id;
+  static std::string Escape(const std::string &src) {
+    std::stringstream ss;
+    for (auto &ch : src) {
+      if (ch == '\n') {
+        ss << "\\0A";
+      } else if (ch == '\t') {
+        ss << "\\09";
+      } else if (ch == '\r') {
+        ss << "\\0D";
+      } else if (ch == '\"') {
+        ss << "\\22";
+      } else if (ch == '\\') {
+        ss << "\\5C";
+      } else {
+        ss << ch;
+      }
+    }
+    return ss.str();
+  }
+
+ public:
+  ConstStrItem() = default;
+  void RecursivePrint(std::ostream &os) const {
+    os << "@.str." << const_str_id << " = private unnamed_addr constant [" << string_raw.size() + 1 << " x i8] c\""
+       << Escape(string_raw) << "\\00\"\n";
+  }
+};
 class ModuleItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+  std::vector<std::shared_ptr<ConstStrItem>> const_strs;
   std::vector<std::shared_ptr<FunctionDeclareItem>> function_declares;
   std::vector<std::shared_ptr<TypeDefItem>> type_defs;
   std::vector<std::shared_ptr<GlobalVarDefItem>> global_var_defs;
@@ -450,6 +486,9 @@ class ModuleItem : public LLVMIRItemBase {
  public:
   ModuleItem() = default;
   void RecursivePrint(std::ostream &os) const {
+    for (auto &item : const_strs) {
+      item->RecursivePrint(os);
+    }
     for (auto &item : function_declares) {
       item->RecursivePrint(os);
     }
