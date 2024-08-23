@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <unordered_set>
 #include "IR_basic.h"
 #include "ast/astnode_visitor.h"
@@ -27,6 +28,7 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   std::unordered_map<std::string, size_t> const_str_dict;
   size_t const_arr_counter;
   std::unordered_set<std::string> already_set_constructor;
+  std::unordered_map<std::string, std::shared_ptr<BlockItem>> inline_builders;
 
  public:
   IRBuilder() {

@@ -130,6 +130,13 @@ void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
           const_array_construct_call->result_full = init_var;
           const_array_construct_call->return_type = LLVMIRPTRType();
           const_array_construct_call->func_name_raw = var.second->IR_result_full.substr(1);
+        } else if (init_var[0] == '!') {
+          // inline builder
+          auto inline_builder = inline_builders[init_var.substr(1)];
+          init_var = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+          for (auto &act : inline_builder->actions) {
+            main_init_block->actions.push_back(act);
+          }
         }
         auto act = std::make_shared<StoreAction>();
         main_init_block->actions.push_back(act);
@@ -155,6 +162,13 @@ void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
           const_array_construct_call->result_full = init_var;
           const_array_construct_call->return_type = LLVMIRPTRType();
           const_array_construct_call->func_name_raw = var.second->IR_result_full.substr(1);
+        } else if (init_var[0] == '!') {
+          // inline builder
+          auto inline_builder = inline_builders[init_var.substr(1)];
+          init_var = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+          for (auto &act : inline_builder->actions) {
+            cur_block->actions.push_back(act);
+          }
         }
         auto act = std::make_shared<StoreAction>();
         cur_block->actions.push_back(act);
@@ -368,12 +382,12 @@ void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
     return;
   }
   std::string constructing_func_name = ".constarr." + std::to_string(const_arr_counter++);
-  auto cons_func = std::make_shared<FunctionDefItem>();
-  prog->function_defs.push_back(cons_func);
-  cons_func->func_name_raw = constructing_func_name;
-  cons_func->return_type = LLVMIRPTRType();
+  // auto cons_func = std::make_shared<FunctionDefItem>();
+  // prog->function_defs.push_back(cons_func);
+  // cons_func->func_name_raw = constructing_func_name;
+  // cons_func->return_type = LLVMIRPTRType();
   auto block = std::make_shared<BlockItem>();
-  cons_func->basic_blocks.push_back(block);
+  inline_builders[constructing_func_name] = block;
   block->label_full = "label_constarr_" + std::to_string(const_arr_counter - 1);
   block->exit_action = std::make_shared<RETAction>();
   std::dynamic_pointer_cast<RETAction>(block->exit_action)->type = LLVMIRPTRType();
@@ -429,7 +443,7 @@ void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
   ret->type = LLVMIRPTRType();
   ret->value = res;
 
-  node->IR_result_full = "#" + constructing_func_name;
+  node->IR_result_full = "!" + constructing_func_name;  // inline builder
 }
 
 void IRBuilder::ActuralVisit(NewConstructExpr_ASTNode *node) {
@@ -536,9 +550,12 @@ void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
     }
   } else {
     node->base->accept(this);
-    std::string type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
+    std::string type_of_base;
+    if (std::holds_alternative<IdentifierType>(node->base->expr_type_info))
+      type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
     std::string base_ptr = node->base->IR_result_full;
     std::string func_name = type_of_base + "." + node->member;
+    if (std::holds_alternative<ArrayType>(node->base->expr_type_info)) func_name = ".builtin.GetArrayLength";
     std::vector<std::string> arg_val;
     for (size_t i = 0; i < node->arguments.size(); i++) {
       node->arguments[i]->accept(this);
@@ -890,6 +907,13 @@ void IRBuilder::ActuralVisit(AssignExpr_ASTNode *node) {
     const_array_construct_call->result_full = src;
     const_array_construct_call->return_type = LLVMIRPTRType();
     const_array_construct_call->func_name_raw = node->src->IR_result_full.substr(1);
+  } else if (src[0] == '!') {
+    // inline builder
+    auto inline_builder = inline_builders[src.substr(1)];
+    src = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+    for (auto &act : inline_builder->actions) {
+      cur_block->actions.push_back(act);
+    }
   }
   cur_block->actions.push_back(act);
   act->value_full = src;
