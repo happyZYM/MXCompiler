@@ -244,7 +244,6 @@ class ICMPAction : public ActionItem {
 };
 class BlockItem : public LLVMIRItemBase {
   friend class IRBuilder;
-  friend void ArrangeConstArr(BlockItem &blk, class ConstantExpr_ASTNode *node, size_t &tmp_var_counter);
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;

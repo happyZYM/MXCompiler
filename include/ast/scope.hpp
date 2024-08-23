@@ -138,6 +138,7 @@ class ClassDefScope : public ScopeBase {
   std::unordered_map<std::string, ExprTypeInfo> member_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> member_functions;
   IRClassInfo llvm_class_info;
+  size_t arrange_counter;
   bool add_variable(const std::string &name, const ExprTypeInfo &type) override {
     if (!VariableNameAvailable(name, 0)) {
       return false;
@@ -150,6 +151,14 @@ class ClassDefScope : public ScopeBase {
       throw SemanticError("Invalid Type", 1);
     }
     member_variables[name] = type;
+    llvm_class_info.member_var_offset[name] = arrange_counter++;
+    size_t cur_element_size = 4;
+    ExprTypeInfo bool_std = IdentifierType("bool");
+    if (type == bool_std) {
+      cur_element_size = 1;
+    }
+    llvm_class_info.member_var_size.push_back(cur_element_size);
+    llvm_class_info.member_var_type.push_back(Type_AST2LLVM(type));
     return true;
   }
   virtual ExprTypeInfo fetch_varaible(const std::string &name) override {
@@ -196,6 +205,9 @@ class ClassDefScope : public ScopeBase {
     }
     return parent->VariableNameAvailable(name, ttl + 1);
   }
+
+ public:
+  ClassDefScope() : arrange_counter(0) {}
 };
 class GlobalScope : public ScopeBase {
   friend class Visitor;
@@ -306,6 +318,15 @@ class GlobalScope : public ScopeBase {
       return res;
     }
     return parent->fetch_variable_for_IR(name);
+  }
+  IRClassInfo fetch_class_info(const std::string &name) {
+    if (classes.find(name) == classes.end()) {
+      throw SemanticError("Undefined Identifier", 1);
+    }
+    auto &tmp = classes[name]->llvm_class_info;
+    tmp.class_name_raw = name;
+    tmp.ArrangeSpace();
+    return tmp;
   }
 
  public:

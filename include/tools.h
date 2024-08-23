@@ -117,13 +117,17 @@ struct LLVMIRCLASSTYPE {
 using LLVMType = std::variant<LLVMIRIntType, LLVMIRPTRType, LLVMVOIDType, LLVMIRCLASSTYPE>;
 class IRClassInfo {
  public:
-  std::string class_name_raw;           // This data must be provided by user
-  std::vector<size_t> member_var_size;  // This data must be provided by user. Each of them is the size of a member
-                                        // variable, which must be in [1,4]
+  std::string class_name_raw;             // This data must be provided by user
+  std::vector<size_t> member_var_size;    // This data must be provided by user. Each of them is the size of a member
+                                          // variable, which must be in [1,4]
+  std::vector<LLVMType> member_var_type;  // This data must be provided by user
   std::unordered_map<std::string, size_t> member_var_offset;  // This data must be provided by user
   std::vector<size_t> member_var_pos_after_align;
   size_t class_size_after_align;
+  bool alread_arranged;
   void ArrangeSpace() {
+    if (alread_arranged) return;
+    alread_arranged = true;
     size_t cur_pos = 0;
     size_t align_size = 1;
     for (size_t cur_size : member_var_size) {
@@ -142,6 +146,7 @@ class IRClassInfo {
     }
   }
   std::string GenerateFullName() { return "%.class." + class_name_raw; }
+  IRClassInfo() : alread_arranged(false) {}
 };
 class IRVariableInfo {
  public:

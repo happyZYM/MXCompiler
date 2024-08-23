@@ -397,7 +397,56 @@ void IRBuilder::ActuralVisit(NewExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
-  // TODO: Implement function body
+  if (!node->is_function) {
+    node->base->accept(this);
+    std::string type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
+    IRClassInfo class_info = global_scope->fetch_class_info(type_of_base);
+    std::string base_ptr = node->base->IR_result_full;
+    size_t idx = class_info.member_var_offset[node->member];
+    auto member_addr_cal = std::make_shared<GetElementPtrAction>();
+    cur_block->actions.push_back(member_addr_cal);
+    member_addr_cal->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    member_addr_cal->ty = LLVMIRCLASSTYPE{"%.class." + type_of_base};
+    member_addr_cal->ptr_full = base_ptr;
+    member_addr_cal->indices.push_back("0");
+    member_addr_cal->indices.push_back(std::to_string(idx));
+    if (node->is_requiring_lvalue) {
+      node->IR_result_full = member_addr_cal->result_full;
+    } else {
+      auto member_val_load = std::make_shared<LoadAction>();
+      cur_block->actions.push_back(member_val_load);
+      member_val_load->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      member_val_load->ty = class_info.member_var_type[idx];
+      member_val_load->ptr_full = member_addr_cal->result_full;
+      node->IR_result_full = member_val_load->result_full;
+    }
+  } else {
+    node->base->accept(this);
+    std::string type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
+    std::string base_ptr = node->base->IR_result_full;
+    std::string func_name = type_of_base + "." + node->member;
+    std::vector<std::string> arg_val;
+    for (size_t i = 0; i < node->arguments.size(); i++) {
+      node->arguments[i]->accept(this);
+      arg_val.push_back(node->arguments[i]->IR_result_full);
+    }
+    auto call_act = std::make_shared<CallItem>();
+    cur_block->actions.push_back(call_act);
+    call_act->return_type = Type_AST2LLVM(node->expr_type_info);
+    if (!std::holds_alternative<LLVMVOIDType>(call_act->return_type)) {
+      call_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    }
+    call_act->func_name_raw = func_name;
+    call_act->args_ty.push_back(LLVMIRPTRType());
+    call_act->args_val_full.push_back(base_ptr);
+    for (size_t i = 0; i < arg_val.size(); i++) {
+      call_act->args_ty.push_back(Type_AST2LLVM(node->arguments[i]->expr_type_info));
+      call_act->args_val_full.push_back(arg_val[i]);
+    }
+    if (!std::holds_alternative<LLVMVOIDType>(call_act->return_type)) {
+      node->IR_result_full = call_act->result_full;
+    }
+  }
 }
 
 void IRBuilder::ActuralVisit(IndexExpr_ASTNode *node) {
@@ -740,6 +789,7 @@ void IRBuilder::ActuralVisit(ThisExpr_ASTNode *node) {
 
 void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
   node->expr->accept(this);  // just visit it
+  node->IR_result_full = node->expr->IR_result_full;
 }
 
 void IRBuilder::ActuralVisit(IDExpr_ASTNode *node) {
@@ -846,34 +896,101 @@ void IRBuilder::ActuralVisit(ConstantExpr_ASTNode *node) {
 std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src) {
   IRBuilder visitor;
   visitor.prog = std::make_shared<ModuleItem>();
-  auto tmp = std::make_shared<FunctionDeclareItem>();
+  auto tmp = std::make_shared<FunctionDeclareItem>();  // void* malloc(unsigned int size)
   tmp->func_name_raw = "malloc";
   tmp->return_type = LLVMIRPTRType();
   tmp->args.push_back(LLVMIRIntType(32));
   visitor.prog->function_declares.push_back(tmp);
-  tmp = std::make_shared<FunctionDeclareItem>();
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void printInt(int n)
   tmp->func_name_raw = "printInt";
   tmp->return_type = LLVMVOIDType();
   tmp->args.push_back(LLVMIRIntType(32));
   visitor.prog->function_declares.push_back(tmp);
-  tmp = std::make_shared<FunctionDeclareItem>();
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void print(char *str)
   tmp->func_name_raw = "print";
   tmp->return_type = LLVMVOIDType();
   tmp->args.push_back(LLVMIRPTRType());
   visitor.prog->function_declares.push_back(tmp);
-  tmp = std::make_shared<FunctionDeclareItem>();
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void* _builtin_AllocateArray(int element_size, int element_num)
   tmp->func_name_raw = ".builtin.AllocateArray";
   tmp->return_type = LLVMIRPTRType();
   tmp->args.push_back(LLVMIRIntType(32));
   tmp->args.push_back(LLVMIRIntType(32));
   visitor.prog->function_declares.push_back(tmp);
-  tmp = std::make_shared<FunctionDeclareItem>();
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void* _builtin_RecursiveAllocateArray(int dims_with_size,
+                                                  // int element_size, int* dim_size)
   tmp->func_name_raw = ".builtin.RecursiveAllocateArray";
   tmp->return_type = LLVMIRPTRType();
   tmp->args.push_back(LLVMIRIntType(32));
   tmp->args.push_back(LLVMIRIntType(32));
   tmp->args.push_back(LLVMIRPTRType());
   visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // int _builtin_GetArrayLength(void* array)
+  tmp->func_name_raw = ".builtin.GetArrayLength";
+  tmp->return_type = LLVMIRIntType(32);
+  tmp->args.push_back(LLVMIRPTRType());
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // int getInt()
+  tmp->func_name_raw = "getInt";
+  tmp->return_type = LLVMIRIntType(32);
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // char* getString()
+  tmp->func_name_raw = "getString";
+  tmp->return_type = LLVMIRPTRType();
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // char* toString(int n)
+  tmp->func_name_raw = "toString";
+  tmp->return_type = LLVMIRPTRType();
+  tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void printlnInt(int n)
+  tmp->func_name_raw = "printlnInt";
+  tmp->return_type = LLVMVOIDType();
+  tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // void println(char *str)
+  tmp->func_name_raw = "println";
+  tmp->return_type = LLVMVOIDType();
+  tmp->args.push_back(LLVMIRPTRType());
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // int string_length(char *self)
+  tmp->func_name_raw = "string.length";
+  tmp->return_type = LLVMIRIntType(32);
+  tmp->args.push_back(LLVMIRPTRType());
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // char* string_substring(char *self,int left, int right)
+  tmp->func_name_raw = "string.substring";
+  tmp->return_type = LLVMIRPTRType();
+  tmp->args.push_back(LLVMIRPTRType());
+  tmp->args.push_back(LLVMIRIntType(32));
+  tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // int string_parseInt(char *self)
+  tmp->func_name_raw = "string.parseInt";
+  tmp->return_type = LLVMIRIntType(32);
+  tmp->args.push_back(LLVMIRPTRType());
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // int string_ord(char *self, int index)
+  tmp->func_name_raw = "string.ord";
+  tmp->return_type = LLVMIRIntType(32);
+  tmp->args.push_back(LLVMIRPTRType());
+  tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+
   visitor.global_scope = std::dynamic_pointer_cast<GlobalScope>(src->current_scope);
   if (!(visitor.global_scope)) throw std::runtime_error("global scope not found");
   visitor.visit(src.get());
