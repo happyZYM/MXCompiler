@@ -462,6 +462,7 @@ void ASTSemanticCheckVisitor::ActuralVisit(IDExpr_ASTNode *node) {
   // TODO: Implement this method
   // TODO: process type
   node->expr_type_info = node->current_scope->fetch_varaible(node->id);
+  node->cached_var_info = node->current_scope->fetch_variable_for_IR(node->id);
   node->assignable = true;
 }
 

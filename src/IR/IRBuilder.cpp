@@ -121,6 +121,7 @@ void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
       var_def->type = Type_AST2LLVM(node->var_type);
       var_def->name_raw = var.first;
       if (var.second) {
+        cur_block = main_init_block;
         var.second->accept(this);
         std::string init_var = var.second->IR_result_full;
         if (init_var[0] == '#') {
@@ -352,10 +353,12 @@ void IRBuilder::ActuralVisit(JmpStatement_ASTNode *node) {
     just_encountered_jmp = true;
   } else if (node->jmp_type == 0) {
     // return
-    cur_block->exit_action = std::make_shared<RETAction>();
     if (node->return_value) {
       node->return_value->accept(this);
+      cur_block->exit_action = std::make_shared<RETAction>();
       std::dynamic_pointer_cast<RETAction>(cur_block->exit_action)->value = node->return_value->IR_result_full;
+    } else {
+      cur_block->exit_action = std::make_shared<RETAction>();
     }
     std::dynamic_pointer_cast<RETAction>(cur_block->exit_action)->type = cur_func->return_type;
     just_encountered_jmp = true;
@@ -982,13 +985,16 @@ void IRBuilder::ActuralVisit(TernaryExpr_ASTNode *node) {
   std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
   cur_func->basic_blocks.push_back(new_block);
   cur_block = new_block;
-  auto phi_act = std::make_shared<PhiItem>();
-  phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
-  phi_act->ty = Type_AST2LLVM(node->expr_type_info);
-  phi_act->values.push_back(std::make_pair(node->src1->IR_result_full, src1_end_block->label_full));
-  phi_act->values.push_back(std::make_pair(node->src2->IR_result_full, src2_end_block->label_full));
-  cur_block->actions.push_back(phi_act);
-  node->IR_result_full = phi_act->result_full;
+  ExprTypeInfo void_std = IdentifierType("void");
+  if (node->expr_type_info != void_std) {
+    auto phi_act = std::make_shared<PhiItem>();
+    phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    phi_act->ty = Type_AST2LLVM(node->expr_type_info);
+    phi_act->values.push_back(std::make_pair(node->src1->IR_result_full, src1_end_block->label_full));
+    phi_act->values.push_back(std::make_pair(node->src2->IR_result_full, src2_end_block->label_full));
+    cur_block->actions.push_back(phi_act);
+    node->IR_result_full = phi_act->result_full;
+  }
 }
 
 void IRBuilder::ActuralVisit(AssignExpr_ASTNode *node) {
@@ -1029,7 +1035,7 @@ void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(IDExpr_ASTNode *node) {
-  IRVariableInfo var_info = node->current_scope->fetch_variable_for_IR(node->id);
+  IRVariableInfo var_info = node->cached_var_info;
   if (var_info.variable_type == 0 || var_info.variable_type == 1 || var_info.variable_type == 3) {
     if (node->is_requiring_lvalue) {
       node->IR_result_full = var_info.GenerateFullName();

@@ -319,6 +319,7 @@ class IDExpr_ASTNode : public BasicExpr_ASTNode {
   friend class ASTSemanticCheckVisitor;
   friend class IRBuilder;
   IdentifierType id;
+  IRVariableInfo cached_var_info;
 
  public:
   IDExpr_ASTNode() = default;
