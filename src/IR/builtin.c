@@ -3,11 +3,26 @@
 #define EOF (-1)
 // libc function
 void* malloc(unsigned int size);
+unsigned int strlen(const char *s);
 void free(void* ptr);
 int printf(const char *pattern, ...);
 int scanf(const char *format, ...);
 int sprintf(char *str, const char *pattern, ...);
 int sscanf(const char *str, const char *pattern, ...);
+char *strcat(char *dest, const char *src);
+char *_builtin_strcat(char *dest, const char *src) {
+  int len1=strlen(dest);
+  int len2=strlen(src);
+  char* res=(char*)malloc(len1+len2+1);
+  for(int i=0;i<len1;i++) {
+    res[i]=dest[i];
+  }
+  for(int i=0;i<len2;i++) {
+    res[i+len1]=src[i];
+  }
+  res[len1+len2]='\0';
+  return res;
+}
 int string_length(char *self) {
   int res=0;
   while(self[res]!='\0') {
@@ -54,8 +69,13 @@ char* getString() { // same as getline
   int allocated_length = 10;
   int cur_length = 0;
   char ch;
+  char started=0;
   while(scanf("%c",&ch)==1) {
-    if(ch=='\n'||ch=='\r') break;
+    if(ch=='\n'||ch=='\r') {
+      if(started) break;
+      else continue;
+    }
+    started=1;
     if(cur_length==allocated_length) {
       char *new_res = (char*)malloc(allocated_length*2+1);
       for(int i=0;i<allocated_length;i++) {

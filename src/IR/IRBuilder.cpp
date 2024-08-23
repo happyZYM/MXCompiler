@@ -583,10 +583,12 @@ void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
 void IRBuilder::ActuralVisit(IndexExpr_ASTNode *node) {
   node->base->accept(this);
   std::string cur_val = node->base->IR_result_full;
+  auto type_of_base = node->base->expr_type_info;
+  size_t total_dims = std::get<ArrayType>(type_of_base).level;
   std::string cur_addr;
   for (size_t i = 0; i < node->indices.size(); i++) {
     LLVMType cur_ty;
-    if (i + 1 < node->indices.size())
+    if (i + 1 < total_dims)
       cur_ty = LLVMIRPTRType();
     else {
       ArrayType tp = std::get<ArrayType>(node->base->expr_type_info);
@@ -741,6 +743,20 @@ void IRBuilder::ActuralVisit(MDMExpr_ASTNode *node) {
 void IRBuilder::ActuralVisit(PMExpr_ASTNode *node) {
   node->left->accept(this);
   node->right->accept(this);
+  ExprTypeInfo string_std = IdentifierType("string");
+  if (node->left->expr_type_info == string_std) {
+    auto act = std::make_shared<CallItem>();
+    cur_block->actions.push_back(act);
+    act->func_name_raw = ".builtin.strcat";
+    act->return_type = LLVMIRPTRType();
+    act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    act->args_ty.push_back(LLVMIRPTRType());
+    act->args_val_full.push_back(node->left->IR_result_full);
+    act->args_ty.push_back(LLVMIRPTRType());
+    act->args_val_full.push_back(node->right->IR_result_full);
+    node->IR_result_full = act->result_full;
+    return;
+  }
   auto act = std::make_shared<BinaryOperationAction>();
   cur_block->actions.push_back(act);
   if (node->op == "+") {
@@ -755,7 +771,6 @@ void IRBuilder::ActuralVisit(PMExpr_ASTNode *node) {
   act->type = LLVMIRIntType(32);
   act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
   node->IR_result_full = act->result_full;
-  // TODO: support for string concatenation
 }
 
 void IRBuilder::ActuralVisit(RLExpr_ASTNode *node) {
@@ -862,35 +877,118 @@ void IRBuilder::ActuralVisit(BOrExpr_ASTNode *node) {
 
 void IRBuilder::ActuralVisit(LAndExpr_ASTNode *node) {
   node->left->accept(this);
+  // node->right->accept(this);
+  // auto act = std::make_shared<BinaryOperationAction>();
+  // cur_block->actions.push_back(act);
+  // act->op = "and";
+  // act->operand1_full = node->left->IR_result_full;
+  // act->operand2_full = node->right->IR_result_full;
+  // act->type = LLVMIRIntType(1);
+  // act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  // node->IR_result_full = act->result_full;
+  size_t right_cal_block_id = block_counter++;
+  size_t new_block_id = block_counter++;
+  auto right_cal_block = std::make_shared<BlockItem>();
+  auto new_block = std::make_shared<BlockItem>();
+  right_cal_block->label_full = "label_" + std::to_string(right_cal_block_id);
+  new_block->label_full = "label_" + std::to_string(new_block_id);
+  cur_block->exit_action = std::make_shared<BRAction>();
+  auto src_block = cur_block;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->true_label_full = right_cal_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->false_label_full = new_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->cond = node->left->IR_result_full;
+  cur_func->basic_blocks.push_back(right_cal_block);
+  cur_block = right_cal_block;
   node->right->accept(this);
-  auto act = std::make_shared<BinaryOperationAction>();
-  cur_block->actions.push_back(act);
-  act->op = "and";
-  act->operand1_full = node->left->IR_result_full;
-  act->operand2_full = node->right->IR_result_full;
-  act->type = LLVMIRIntType(1);
-  act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
-  node->IR_result_full = act->result_full;
-  // TODO: short-circuit
+  cur_block->exit_action = std::make_shared<UNConditionJMPAction>();
+  auto right_block_end = cur_block;
+  std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
+  cur_func->basic_blocks.push_back(new_block);
+  cur_block = new_block;
+  auto phi_act = std::make_shared<PhiItem>();
+  phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  phi_act->ty = LLVMIRIntType(1);
+  phi_act->values.push_back(std::make_pair("0", src_block->label_full));
+  phi_act->values.push_back(std::make_pair(node->right->IR_result_full, right_block_end->label_full));
+  cur_block->actions.push_back(phi_act);
+  node->IR_result_full = phi_act->result_full;
 }
 
 void IRBuilder::ActuralVisit(LOrExpr_ASTNode *node) {
   node->left->accept(this);
+  // node->right->accept(this);
+  // auto act = std::make_shared<BinaryOperationAction>();
+  // cur_block->actions.push_back(act);
+  // act->op = "or";
+  // act->operand1_full = node->left->IR_result_full;
+  // act->operand2_full = node->right->IR_result_full;
+  // act->type = LLVMIRIntType(1);
+  // act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  // node->IR_result_full = act->result_full;
+  size_t right_cal_block_id = block_counter++;
+  size_t new_block_id = block_counter++;
+  auto right_cal_block = std::make_shared<BlockItem>();
+  auto new_block = std::make_shared<BlockItem>();
+  right_cal_block->label_full = "label_" + std::to_string(right_cal_block_id);
+  new_block->label_full = "label_" + std::to_string(new_block_id);
+  cur_block->exit_action = std::make_shared<BRAction>();
+  auto src_block = cur_block;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->true_label_full = new_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->false_label_full = right_cal_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->cond = node->left->IR_result_full;
+  cur_func->basic_blocks.push_back(right_cal_block);
+  cur_block = right_cal_block;
   node->right->accept(this);
-  auto act = std::make_shared<BinaryOperationAction>();
-  cur_block->actions.push_back(act);
-  act->op = "or";
-  act->operand1_full = node->left->IR_result_full;
-  act->operand2_full = node->right->IR_result_full;
-  act->type = LLVMIRIntType(1);
-  act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
-  node->IR_result_full = act->result_full;
-  // TODO: short-circuit
+  cur_block->exit_action = std::make_shared<UNConditionJMPAction>();
+  auto right_block_end = cur_block;
+  std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
+  cur_func->basic_blocks.push_back(new_block);
+  cur_block = new_block;
+  auto phi_act = std::make_shared<PhiItem>();
+  phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  phi_act->ty = LLVMIRIntType(1);
+  phi_act->values.push_back(std::make_pair("1", src_block->label_full));
+  phi_act->values.push_back(std::make_pair(node->right->IR_result_full, right_block_end->label_full));
+  cur_block->actions.push_back(phi_act);
+  node->IR_result_full = phi_act->result_full;
 }
 
 void IRBuilder::ActuralVisit(TernaryExpr_ASTNode *node) {
-  // TODO: Implement function body
-  throw std::runtime_error("ternary operator not supported");
+  node->condition->accept(this);
+  size_t src1_block_id = block_counter++;
+  size_t src2_block_id = block_counter++;
+  size_t new_block_id = block_counter++;
+  auto src1_block = std::make_shared<BlockItem>();
+  auto src2_block = std::make_shared<BlockItem>();
+  auto new_block = std::make_shared<BlockItem>();
+  src1_block->label_full = "label_" + std::to_string(src1_block_id);
+  src2_block->label_full = "label_" + std::to_string(src2_block_id);
+  new_block->label_full = "label_" + std::to_string(new_block_id);
+  cur_block->exit_action = std::make_shared<BRAction>();
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->true_label_full = src1_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->false_label_full = src2_block->label_full;
+  std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->cond = node->condition->IR_result_full;
+  cur_func->basic_blocks.push_back(src1_block);
+  cur_block = src1_block;
+  node->src1->accept(this);
+  cur_block->exit_action = std::make_shared<UNConditionJMPAction>();
+  auto src1_end_block = cur_block;
+  std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
+  cur_func->basic_blocks.push_back(src2_block);
+  cur_block = src2_block;
+  node->src2->accept(this);
+  cur_block->exit_action = std::make_shared<UNConditionJMPAction>();
+  auto src2_end_block = cur_block;
+  std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
+  cur_func->basic_blocks.push_back(new_block);
+  cur_block = new_block;
+  auto phi_act = std::make_shared<PhiItem>();
+  phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  phi_act->ty = Type_AST2LLVM(node->expr_type_info);
+  phi_act->values.push_back(std::make_pair(node->src1->IR_result_full, src1_end_block->label_full));
+  phi_act->values.push_back(std::make_pair(node->src2->IR_result_full, src2_end_block->label_full));
+  cur_block->actions.push_back(phi_act);
+  node->IR_result_full = phi_act->result_full;
 }
 
 void IRBuilder::ActuralVisit(AssignExpr_ASTNode *node) {
@@ -1160,6 +1258,13 @@ std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src) {
   tmp->return_type = LLVMIRIntType(32);
   tmp->args.push_back(LLVMIRPTRType());
   tmp->args.push_back(LLVMIRIntType(32));
+  visitor.prog->function_declares.push_back(tmp);
+
+  tmp = std::make_shared<FunctionDeclareItem>();  // char *_builtin_strcat(char *dest, const char *src);
+  tmp->func_name_raw = ".builtin.strcat";
+  tmp->return_type = LLVMIRPTRType();
+  tmp->args.push_back(LLVMIRPTRType());
+  tmp->args.push_back(LLVMIRPTRType());
   visitor.prog->function_declares.push_back(tmp);
 
   visitor.global_scope = std::dynamic_pointer_cast<GlobalScope>(src->current_scope);

@@ -4,22 +4,82 @@
 	.file	"builtin.c"
 	.option	push
 	.option	arch, +a, +c
+	.globl	.builtin.strcat                 # -- Begin function .builtin.strcat
+	.p2align	1
+	.type	.builtin.strcat,@function
+.builtin.strcat:                        # @.builtin.strcat
+# %bb.0:
+	addi	sp, sp, -32
+	sw	ra, 28(sp)                      # 4-byte Folded Spill
+	sw	s0, 24(sp)                      # 4-byte Folded Spill
+	sw	s1, 20(sp)                      # 4-byte Folded Spill
+	sw	s2, 16(sp)                      # 4-byte Folded Spill
+	sw	s3, 12(sp)                      # 4-byte Folded Spill
+	sw	s4, 8(sp)                       # 4-byte Folded Spill
+	mv	s0, a1
+	mv	s1, a0
+	call	strlen
+	mv	s2, a0
+	mv	a0, s0
+	call	strlen
+	mv	s3, a0
+	add	s4, a0, s2
+	addi	a0, s4, 1
+	call	malloc
+	blez	s2, .LBB0_3
+# %bb.1:                                # %.preheader1
+	add	a1, a0, s2
+	mv	a2, a0
+.LBB0_2:                                # =>This Inner Loop Header: Depth=1
+	lbu	a3, 0(s1)
+	sb	a3, 0(a2)
+	addi	a2, a2, 1
+	addi	s1, s1, 1
+	bne	a2, a1, .LBB0_2
+.LBB0_3:
+	blez	s3, .LBB0_6
+# %bb.4:                                # %.preheader
+	add	s2, s2, a0
+	add	a1, a0, s4
+.LBB0_5:                                # =>This Inner Loop Header: Depth=1
+	lbu	a2, 0(s0)
+	sb	a2, 0(s2)
+	addi	s2, s2, 1
+	addi	s0, s0, 1
+	bne	s2, a1, .LBB0_5
+.LBB0_6:
+	add	s4, s4, a0
+	sb	zero, 0(s4)
+	lw	ra, 28(sp)                      # 4-byte Folded Reload
+	lw	s0, 24(sp)                      # 4-byte Folded Reload
+	lw	s1, 20(sp)                      # 4-byte Folded Reload
+	lw	s2, 16(sp)                      # 4-byte Folded Reload
+	lw	s3, 12(sp)                      # 4-byte Folded Reload
+	lw	s4, 8(sp)                       # 4-byte Folded Reload
+	addi	sp, sp, 32
+	ret
+.Lfunc_end0:
+	.size	.builtin.strcat, .Lfunc_end0-.builtin.strcat
+                                        # -- End function
+	.option	pop
+	.option	push
+	.option	arch, +a, +c
 	.globl	string.length                   # -- Begin function string.length
 	.p2align	1
 	.type	string.length,@function
 string.length:                          # @string.length
 # %bb.0:
 	li	a1, 0
-.LBB0_1:                                # =>This Inner Loop Header: Depth=1
+.LBB1_1:                                # =>This Inner Loop Header: Depth=1
 	add	a2, a0, a1
 	lbu	a2, 0(a2)
 	addi	a1, a1, 1
-	bnez	a2, .LBB0_1
+	bnez	a2, .LBB1_1
 # %bb.2:
 	addi	a0, a1, -1
 	ret
-.Lfunc_end0:
-	.size	string.length, .Lfunc_end0-string.length
+.Lfunc_end1:
+	.size	string.length, .Lfunc_end1-string.length
                                         # -- End function
 	.option	pop
 	.option	push
@@ -40,17 +100,17 @@ string.substring:                       # @string.substring
 	addi	a0, s1, 1
 	call	malloc
 	add	a1, a0, s1
-	blez	s1, .LBB1_3
+	blez	s1, .LBB2_3
 # %bb.1:                                # %.preheader
 	add	s0, s0, s2
 	mv	a2, a0
-.LBB1_2:                                # =>This Inner Loop Header: Depth=1
+.LBB2_2:                                # =>This Inner Loop Header: Depth=1
 	lbu	a3, 0(s0)
 	sb	a3, 0(a2)
 	addi	a2, a2, 1
 	addi	s0, s0, 1
-	bne	a2, a1, .LBB1_2
-.LBB1_3:
+	bne	a2, a1, .LBB2_2
+.LBB2_3:
 	sb	zero, 0(a1)
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	lw	s0, 8(sp)                       # 4-byte Folded Reload
@@ -58,8 +118,8 @@ string.substring:                       # @string.substring
 	lw	s2, 0(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end1:
-	.size	string.substring, .Lfunc_end1-string.substring
+.Lfunc_end2:
+	.size	string.substring, .Lfunc_end2-string.substring
                                         # -- End function
 	.option	pop
 	.option	push
@@ -79,8 +139,8 @@ string.parseInt:                        # @string.parseInt
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end2:
-	.size	string.parseInt, .Lfunc_end2-string.parseInt
+.Lfunc_end3:
+	.size	string.parseInt, .Lfunc_end3-string.parseInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -93,8 +153,8 @@ string.ord:                             # @string.ord
 	add	a0, a0, a1
 	lbu	a0, 0(a0)
 	ret
-.Lfunc_end3:
-	.size	string.ord, .Lfunc_end3-string.ord
+.Lfunc_end4:
+	.size	string.ord, .Lfunc_end4-string.ord
                                         # -- End function
 	.option	pop
 	.option	push
@@ -110,8 +170,8 @@ print:                                  # @print
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end4:
-	.size	print, .Lfunc_end4-print
+.Lfunc_end5:
+	.size	print, .Lfunc_end5-print
                                         # -- End function
 	.option	pop
 	.option	push
@@ -127,8 +187,8 @@ println:                                # @println
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end5:
-	.size	println, .Lfunc_end5-println
+.Lfunc_end6:
+	.size	println, .Lfunc_end6-println
                                         # -- End function
 	.option	pop
 	.option	push
@@ -144,8 +204,8 @@ printInt:                               # @printInt
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end6:
-	.size	printInt, .Lfunc_end6-printInt
+.Lfunc_end7:
+	.size	printInt, .Lfunc_end7-printInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -161,8 +221,8 @@ printlnInt:                             # @printlnInt
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end7:
-	.size	printlnInt, .Lfunc_end7-printlnInt
+.Lfunc_end8:
+	.size	printlnInt, .Lfunc_end8-printlnInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -191,8 +251,8 @@ toString:                               # @toString
 	lw	s1, 4(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end8:
-	.size	toString, .Lfunc_end8-toString
+.Lfunc_end9:
+	.size	toString, .Lfunc_end9-toString
                                         # -- End function
 	.option	pop
 	.option	push
@@ -213,76 +273,95 @@ getString:                              # @getString
 	sw	s6, 16(sp)                      # 4-byte Folded Spill
 	sw	s7, 12(sp)                      # 4-byte Folded Spill
 	sw	s8, 8(sp)                       # 4-byte Folded Spill
+	sw	s9, 4(sp)                       # 4-byte Folded Spill
 	li	a0, 11
 	call	malloc
-	mv	s8, a0
+	mv	s3, a0
 	lui	a0, %hi(.L.str.4)
-	addi	s2, a0, %lo(.L.str.4)
-	addi	a1, sp, 7
-	mv	a0, s2
+	addi	s0, a0, %lo(.L.str.4)
+	addi	a1, sp, 3
+	mv	a0, s0
 	call	scanf
-	li	s3, 1
-	bne	a0, s3, .LBB9_11
-# %bb.1:                                # %.preheader1
-	li	s1, 0
+	li	s9, 1
+	bne	a0, s9, .LBB10_15
+# %bb.1:                                # %.preheader4
+	li	s6, 0
 	li	s4, 10
 	li	s5, 13
-	mv	s6, s8
+	mv	s2, s3
+	li	a1, 1
 	li	s7, 10
-	j	.LBB9_4
-.LBB9_2:                                #   in Loop: Header=BB9_4 Depth=1
-	mv	s8, s6
-.LBB9_3:                                #   in Loop: Header=BB9_4 Depth=1
-	addi	s0, s1, 1
-	add	s1, s1, s8
-	sb	a0, 0(s1)
-	addi	a1, sp, 7
-	mv	a0, s2
-	call	scanf
-	mv	s1, s0
-	bne	a0, s3, .LBB9_13
-.LBB9_4:                                # =>This Loop Header: Depth=1
-                                        #     Child Loop BB9_9 Depth 2
-	lbu	a0, 7(sp)
-	beq	a0, s4, .LBB9_12
-# %bb.5:                                #   in Loop: Header=BB9_4 Depth=1
-	beq	a0, s5, .LBB9_12
-# %bb.6:                                #   in Loop: Header=BB9_4 Depth=1
-	bne	s1, s7, .LBB9_2
-# %bb.7:                                #   in Loop: Header=BB9_4 Depth=1
-	slli	s7, s1, 1
-	addi	a0, s7, 1
-	call	malloc
-	mv	s8, a0
-	beqz	s1, .LBB9_10
-# %bb.8:                                # %.preheader
-                                        #   in Loop: Header=BB9_4 Depth=1
-	add	a0, s8, s1
-	mv	a1, s6
-	mv	a2, s8
-.LBB9_9:                                #   Parent Loop BB9_4 Depth=1
+.LBB10_2:                               # =>This Loop Header: Depth=1
+                                        #     Child Loop BB10_5 Depth 2
+                                        #     Child Loop BB10_11 Depth 2
+	lbu	a0, 3(sp)
+	beq	a0, s5, .LBB10_4
+# %bb.3:                                #   in Loop: Header=BB10_2 Depth=1
+	bne	a0, s4, .LBB10_8
+.LBB10_4:                               #   in Loop: Header=BB10_2 Depth=1
+	andi	a1, a1, 1
+	beqz	a1, .LBB10_16
+.LBB10_5:                               #   Parent Loop BB10_2 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
-	lbu	a3, 0(a1)
-	sb	a3, 0(a2)
-	addi	a2, a2, 1
+	addi	a1, sp, 3
+	mv	a0, s0
+	call	scanf
+	bne	a0, s9, .LBB10_16
+# %bb.6:                                #   in Loop: Header=BB10_5 Depth=2
+	lbu	a0, 3(sp)
+	beq	a0, s5, .LBB10_5
+# %bb.7:                                #   in Loop: Header=BB10_5 Depth=2
+	beq	a0, s4, .LBB10_5
+.LBB10_8:                               #   in Loop: Header=BB10_2 Depth=1
+	bne	s6, s7, .LBB10_13
+# %bb.9:                                #   in Loop: Header=BB10_2 Depth=1
+	slli	s8, s7, 1
+	addi	a0, s8, 1
+	call	malloc
+	mv	s3, a0
+	blez	s7, .LBB10_12
+# %bb.10:                               # %.preheader
+                                        #   in Loop: Header=BB10_2 Depth=1
+	add	s7, s7, s3
+	mv	a0, s2
+	mv	a1, s3
+.LBB10_11:                              #   Parent Loop BB10_2 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	lbu	a2, 0(a0)
+	sb	a2, 0(a1)
 	addi	a1, a1, 1
-	bne	a2, a0, .LBB9_9
-.LBB9_10:                               #   in Loop: Header=BB9_4 Depth=1
-	mv	a0, s6
+	addi	a0, a0, 1
+	bne	a1, s7, .LBB10_11
+.LBB10_12:                              #   in Loop: Header=BB10_2 Depth=1
+	mv	a0, s2
 	call	free
-	lbu	a0, 7(sp)
-	mv	s6, s8
-	j	.LBB9_3
-.LBB9_11:
-	li	s0, 0
-	j	.LBB9_13
-.LBB9_12:
-	mv	s0, s1
-	mv	s8, s6
-.LBB9_13:
-	add	s0, s0, s8
-	sb	zero, 0(s0)
-	mv	a0, s8
+	lbu	a0, 3(sp)
+	mv	s2, s3
+	mv	s7, s8
+	j	.LBB10_14
+.LBB10_13:                              #   in Loop: Header=BB10_2 Depth=1
+	mv	s3, s2
+.LBB10_14:                              #   in Loop: Header=BB10_2 Depth=1
+	addi	s1, s6, 1
+	add	s6, s6, s3
+	sb	a0, 0(s6)
+	addi	a1, sp, 3
+	mv	a0, s0
+	call	scanf
+	li	a1, 0
+	mv	s6, s1
+	beq	a0, s9, .LBB10_2
+	j	.LBB10_17
+.LBB10_15:
+	li	s1, 0
+	j	.LBB10_17
+.LBB10_16:
+	mv	s1, s6
+	mv	s3, s2
+.LBB10_17:
+	add	s1, s1, s3
+	sb	zero, 0(s1)
+	mv	a0, s3
 	lw	ra, 44(sp)                      # 4-byte Folded Reload
 	lw	s0, 40(sp)                      # 4-byte Folded Reload
 	lw	s1, 36(sp)                      # 4-byte Folded Reload
@@ -293,10 +372,11 @@ getString:                              # @getString
 	lw	s6, 16(sp)                      # 4-byte Folded Reload
 	lw	s7, 12(sp)                      # 4-byte Folded Reload
 	lw	s8, 8(sp)                       # 4-byte Folded Reload
+	lw	s9, 4(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 48
 	ret
-.Lfunc_end9:
-	.size	getString, .Lfunc_end9-getString
+.Lfunc_end10:
+	.size	getString, .Lfunc_end10-getString
                                         # -- End function
 	.option	pop
 	.option	push
@@ -316,8 +396,8 @@ getInt:                                 # @getInt
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end10:
-	.size	getInt, .Lfunc_end10-getInt
+.Lfunc_end11:
+	.size	getInt, .Lfunc_end11-getInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -328,8 +408,8 @@ getInt:                                 # @getInt
 .builtin.AllocateClassBody:             # @.builtin.AllocateClassBody
 # %bb.0:
 	tail	malloc
-.Lfunc_end11:
-	.size	.builtin.AllocateClassBody, .Lfunc_end11-.builtin.AllocateClassBody
+.Lfunc_end12:
+	.size	.builtin.AllocateClassBody, .Lfunc_end12-.builtin.AllocateClassBody
                                         # -- End function
 	.option	pop
 	.option	push
@@ -350,8 +430,8 @@ getInt:                                 # @getInt
 	or	a0, a0, a3
 	or	a0, a0, a1
 	ret
-.Lfunc_end12:
-	.size	.builtin.GetArrayLength, .Lfunc_end12-.builtin.GetArrayLength
+.Lfunc_end13:
+	.size	.builtin.GetArrayLength, .Lfunc_end13-.builtin.GetArrayLength
                                         # -- End function
 	.option	pop
 	.option	push
@@ -378,7 +458,7 @@ getInt:                                 # @getInt
 	srli	s4, s0, 16
 	li	a0, 1
 	srli	s6, s0, 24
-	bne	s2, a0, .LBB13_2
+	bne	s2, a0, .LBB14_2
 # %bb.1:
 	mul	a0, s0, s3
 	addi	a0, a0, 4
@@ -388,8 +468,8 @@ getInt:                                 # @getInt
 	sb	s4, 2(a0)
 	sb	s6, 3(a0)
 	addi	a0, a0, 4
-	j	.LBB13_6
-.LBB13_2:
+	j	.LBB14_6
+.LBB14_2:
 	mv	s7, a2
 	slli	a0, s0, 2
 	addi	a0, a0, 4
@@ -399,14 +479,14 @@ getInt:                                 # @getInt
 	sb	s4, 2(a0)
 	sb	s6, 3(a0)
 	addi	a0, a0, 4
-	blez	s0, .LBB13_6
+	blez	s0, .LBB14_6
 # %bb.3:
 	li	s1, 0
 	addi	s2, s2, -1
 	addi	s5, s7, 4
 	mv	s4, a0
 	mv	s0, a0
-.LBB13_4:                               # =>This Inner Loop Header: Depth=1
+.LBB14_4:                               # =>This Inner Loop Header: Depth=1
 	mv	a0, s2
 	mv	a1, s3
 	mv	a2, s5
@@ -415,10 +495,10 @@ getInt:                                 # @getInt
 	sw	a0, 0(s0)
 	addi	s1, s1, 1
 	addi	s0, s0, 4
-	blt	s1, a1, .LBB13_4
+	blt	s1, a1, .LBB14_4
 # %bb.5:
 	mv	a0, s4
-.LBB13_6:
+.LBB14_6:
 	lw	ra, 44(sp)                      # 4-byte Folded Reload
 	lw	s0, 40(sp)                      # 4-byte Folded Reload
 	lw	s1, 36(sp)                      # 4-byte Folded Reload
@@ -430,8 +510,8 @@ getInt:                                 # @getInt
 	lw	s7, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 48
 	ret
-.Lfunc_end13:
-	.size	.builtin.RecursiveAllocateArray, .Lfunc_end13-.builtin.RecursiveAllocateArray
+.Lfunc_end14:
+	.size	.builtin.RecursiveAllocateArray, .Lfunc_end14-.builtin.RecursiveAllocateArray
                                         # -- End function
 	.option	pop
 	.option	push
@@ -461,8 +541,8 @@ getInt:                                 # @getInt
 	lw	s0, 8(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end14:
-	.size	.builtin.AllocateArray, .Lfunc_end14-.builtin.AllocateArray
+.Lfunc_end15:
+	.size	.builtin.AllocateArray, .Lfunc_end15-.builtin.AllocateArray
                                         # -- End function
 	.option	pop
 	.type	.L.str,@object                  # @.str

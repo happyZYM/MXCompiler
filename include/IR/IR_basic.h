@@ -310,6 +310,7 @@ class CallItem : public ActionItem {
 };
 
 class PhiItem : public ActionItem {
+  friend class IRBuilder;
   std::string result_full;
   LLVMType ty;
   std::vector<std::pair<std::string, std::string>> values;  // (val_i_full, label_i_full)
@@ -326,7 +327,7 @@ class PhiItem : public ActionItem {
     }
     os << " ";
     for (size_t i = 0; i < values.size(); i++) {
-      os << " [" << values[i].first << ", " << values[i].second << "]";
+      os << " [" << values[i].first << ", %" << values[i].second << "]";
       if (i != values.size() - 1) {
         os << ", ";
       }
