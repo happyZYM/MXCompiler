@@ -125,6 +125,7 @@ class IRClassInfo {
   std::vector<size_t> member_var_pos_after_align;
   size_t class_size_after_align;
   bool alread_arranged;
+  bool has_user_specified_constructor;
   void ArrangeSpace() {
     if (alread_arranged) return;
     alread_arranged = true;
@@ -146,7 +147,7 @@ class IRClassInfo {
     }
   }
   std::string GenerateFullName() { return "%.class." + class_name_raw; }
-  IRClassInfo() : alread_arranged(false) {}
+  IRClassInfo() : alread_arranged(false), has_user_specified_constructor(false) {}
 };
 class IRVariableInfo {
  public:
@@ -164,7 +165,7 @@ class IRVariableInfo {
     } else if (variable_type == 1) {
       return "%.var.local." + std::to_string(scope_id) + "." + variable_name_raw + ".addrkp";
     } else if (variable_type == 3) {
-      return "%.var.local." + std::to_string(scope_id) + "." + variable_name_raw + ".val";
+      return "%.var.local." + std::to_string(scope_id) + "." + variable_name_raw + ".addrkp";
     } else {
       throw std::runtime_error("Invalid scope id");
     }

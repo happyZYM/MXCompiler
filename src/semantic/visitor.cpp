@@ -265,6 +265,10 @@ std::any Visitor::visitClass_constructor(MXParser::Class_constructorContext *con
   construct_func->func_body = std::dynamic_pointer_cast<SuiteStatement_ASTNode>(
       std::any_cast<std::shared_ptr<Statement_ASTNode>>(visit(context->suite())));
   std::cerr << std::string(nodetype_stk.size() * 2, ' ') << "constructor body visited" << std::endl;
+  ClassDefScope *cparent = dynamic_cast<ClassDefScope *>(cur_scope->parent);
+  if (!cparent->add_function(construct_func->func_name, cur_scope)) {
+    throw SemanticError("Multiple Definitions", 1);
+  }
 
   nodetype_stk.pop_back();
   return construct_func;

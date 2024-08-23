@@ -326,6 +326,9 @@ class GlobalScope : public ScopeBase {
     auto &tmp = classes[name]->llvm_class_info;
     tmp.class_name_raw = name;
     tmp.ArrangeSpace();
+    if (classes[name]->member_functions.find(name) != classes[name]->member_functions.end()) {
+      tmp.has_user_specified_constructor = true;
+    }
     return tmp;
   }
 

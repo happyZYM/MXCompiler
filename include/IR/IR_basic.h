@@ -81,6 +81,7 @@ class BRAction : public JMPActionItem {
 };
 class UNConditionJMPAction : public JMPActionItem {
   friend class IRBuilder;
+  friend class FunctionDefItem;
   std::string label_full;
 
  public:
@@ -89,6 +90,7 @@ class UNConditionJMPAction : public JMPActionItem {
 };
 class RETAction : public JMPActionItem {
   friend class IRBuilder;
+  friend class FunctionDefItem;
   LLVMType type;
   std::string value;
 
@@ -244,6 +246,7 @@ class ICMPAction : public ActionItem {
 };
 class BlockItem : public LLVMIRItemBase {
   friend class IRBuilder;
+  friend class FunctionDefItem;
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
@@ -366,6 +369,7 @@ class FunctionDefItem : public LLVMIRItemBase {
   std::string func_name_raw;
   std::vector<LLVMType> args;
   std::vector<std::string> args_full_name;
+  std::shared_ptr<BlockItem> init_block;
   std::vector<std::shared_ptr<BlockItem>> basic_blocks;
 
  public:
@@ -398,6 +402,7 @@ class FunctionDefItem : public LLVMIRItemBase {
       }
     }
     os << ")\n{\n";
+    if (init_block) init_block->RecursivePrint(os);
     for (auto &item : basic_blocks) {
       item->RecursivePrint(os);
     }

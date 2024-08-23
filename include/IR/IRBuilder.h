@@ -1,8 +1,10 @@
 #pragma once
 #include <memory>
 #include <stdexcept>
+#include <unordered_set>
 #include "IR_basic.h"
 #include "ast/astnode_visitor.h"
+#include "ast/scope.hpp"
 #include "tools.h"
 class IRBuilder : public ASTNodeVirturalVisitor {
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
@@ -10,6 +12,7 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   std::shared_ptr<TypeDefItem> cur_class;
   std::shared_ptr<FunctionDefItem> cur_func;
   std::shared_ptr<BlockItem> cur_block;
+  std::shared_ptr<BlockItem> main_init_block;
   std::string cur_class_name;
   bool is_in_class_def;
   bool is_in_func_def;
@@ -19,9 +22,11 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   std::string cur_continue_target;
   bool just_encountered_jmp;
   std::shared_ptr<GlobalScope> global_scope;
+  std::shared_ptr<FunctionScope> cur_func_scope;
   size_t const_str_counter;
   std::unordered_map<std::string, size_t> const_str_dict;
   size_t const_arr_counter;
+  std::unordered_set<std::string> already_set_constructor;
 
  public:
   IRBuilder() {
@@ -32,6 +37,8 @@ class IRBuilder : public ASTNodeVirturalVisitor {
     just_encountered_jmp = false;
     const_str_counter = 0;
     const_arr_counter = 0;
+    main_init_block = std::make_shared<BlockItem>();
+    main_init_block->label_full = "main_init";
   }
   // Structural AST Nodes
   void ActuralVisit(FuncDef_ASTNode *node) override;
@@ -98,31 +105,31 @@ class IRBuilder : public ASTNodeVirturalVisitor {
       ty = LLVMIRPTRType();
       elem_size = 4;
     }
-    auto& sub_nodes=std::get<std::vector<std::shared_ptr<ConstantExpr_ASTNode>>>(node->value);
+    auto &sub_nodes = std::get<std::vector<std::shared_ptr<ConstantExpr_ASTNode>>>(node->value);
     std::string array_head = "%.var.tmp." + std::to_string(tmp_var_counter++);
-    auto allocate_action=std::make_shared<CallItem>();
+    auto allocate_action = std::make_shared<CallItem>();
     blk.actions.push_back(allocate_action);
-    allocate_action->func_name_raw=".builtin.AllocateArray";
-    allocate_action->result_full=array_head;
-    allocate_action->return_type=LLVMIRPTRType();
+    allocate_action->func_name_raw = ".builtin.AllocateArray";
+    allocate_action->result_full = array_head;
+    allocate_action->return_type = LLVMIRPTRType();
     allocate_action->args_ty.push_back(LLVMIRIntType(32));
     allocate_action->args_val_full.push_back(std::to_string(elem_size));
     allocate_action->args_ty.push_back(LLVMIRIntType(32));
     allocate_action->args_val_full.push_back(std::to_string(sub_nodes.size()));
-    for(size_t i=0;i<sub_nodes.size();i++) {
-      std::string ret=ArrangeConstArrDfs(blk, sub_nodes[i].get(), depth+1, total_level, basetype);
-      std::string addr="%.var.tmp." + std::to_string(tmp_var_counter++);
-      auto ptr_cal=std::make_shared<GetElementPtrAction>();
+    for (size_t i = 0; i < sub_nodes.size(); i++) {
+      std::string ret = ArrangeConstArrDfs(blk, sub_nodes[i].get(), depth + 1, total_level, basetype);
+      std::string addr = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      auto ptr_cal = std::make_shared<GetElementPtrAction>();
       blk.actions.push_back(ptr_cal);
-      ptr_cal->result_full=addr;
-      ptr_cal->ty=ty;
-      ptr_cal->ptr_full=array_head;
+      ptr_cal->result_full = addr;
+      ptr_cal->ty = ty;
+      ptr_cal->ptr_full = array_head;
       ptr_cal->indices.push_back(std::to_string(i));
-      auto store_action=std::make_shared<StoreAction>();
+      auto store_action = std::make_shared<StoreAction>();
       blk.actions.push_back(store_action);
-      store_action->ty=ty;
-      store_action->ptr_full=addr;
-      store_action->value_full=ret;
+      store_action->ty = ty;
+      store_action->ptr_full = addr;
+      store_action->value_full = ret;
     }
 
     return allocate_action->result_full;

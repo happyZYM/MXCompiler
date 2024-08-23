@@ -1,7 +1,9 @@
 #include "IRBuilder.h"
 #include <stdexcept>
+#include <string>
 #include "IR.h"
 #include "IR_basic.h"
+#include "ast/scope.hpp"
 #include "tools.h"
 
 // Structural AST Nodes
@@ -37,12 +39,38 @@ void IRBuilder::ActuralVisit(FuncDef_ASTNode *node) {
   if (func_def->args.size() != func_def->args_full_name.size()) throw std::runtime_error("args size not match");
 
   cur_func = func_def;
+  cur_func_scope = std::dynamic_pointer_cast<FunctionScope>(node->current_scope);
+  if (!(cur_func_scope)) throw std::runtime_error("Function scope not found");
   auto current_block = std::make_shared<BlockItem>();
   cur_block = current_block;
   cur_func->basic_blocks.push_back(current_block);
   size_t block_id = block_counter++;
   current_block->label_full = "label_" + std::to_string(block_id);
 
+  if (node->func_name == "main") {
+    func_def->init_block = main_init_block;
+  } else {
+    func_def->init_block = std::make_shared<BlockItem>();
+    func_def->init_block->label_full = "label_init_" + node->func_name;
+    for (auto &arg : node->params) {
+      std::string &arg_name_raw = arg.first;
+      std::string rvalue_full_name = "%.var.local." + std::to_string(scope_id) + "." + arg_name_raw + ".val";
+      std::string lvalue_full_name = "%.var.local." + std::to_string(scope_id) + "." + arg_name_raw + ".addrkp";
+      auto allocact = std::make_shared<AllocaAction>();
+      func_def->init_block->actions.push_back(allocact);
+      allocact->num = 1;
+      allocact->type = Type_AST2LLVM(arg.second);
+      allocact->name_full = lvalue_full_name;
+      auto storeact = std::make_shared<StoreAction>();
+      func_def->init_block->actions.push_back(storeact);
+      storeact->ty = Type_AST2LLVM(arg.second);
+      storeact->ptr_full = lvalue_full_name;
+      storeact->value_full = rvalue_full_name;
+    }
+  }
+  cur_func->init_block->exit_action = std::make_shared<UNConditionJMPAction>();
+  std::dynamic_pointer_cast<UNConditionJMPAction>(cur_func->init_block->exit_action)->label_full =
+      current_block->label_full;
   is_in_func_def = true;
   node->func_body->accept(this);
   is_in_func_def = false;
@@ -84,15 +112,31 @@ void IRBuilder::ActuralVisit(EmptyStatement_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
-  if (is_in_class_def) {
-    cur_class->elements.push_back(Type_AST2LLVM(node->var_type));
+  if (is_in_class_def && !is_in_func_def) {
+    for (size_t i = 0; i < node->vars.size(); i++) cur_class->elements.push_back(Type_AST2LLVM(node->var_type));
   } else if (!is_in_func_def) {
     for (const auto &var : node->vars) {
       auto var_def = std::make_shared<GlobalVarDefItem>();
       prog->global_var_defs.push_back(var_def);
       var_def->type = Type_AST2LLVM(node->var_type);
       var_def->name_raw = var.first;
-      // TODO: initial value
+      if (var.second) {
+        var.second->accept(this);
+        std::string init_var = var.second->IR_result_full;
+        if (init_var[0] == '#') {
+          init_var = "%.var.tmp." + std::to_string(tmp_var_counter++);
+          auto const_array_construct_call = std::make_shared<CallItem>();
+          main_init_block->actions.push_back(const_array_construct_call);
+          const_array_construct_call->result_full = init_var;
+          const_array_construct_call->return_type = LLVMIRPTRType();
+          const_array_construct_call->func_name_raw = var.second->IR_result_full.substr(1);
+        }
+        auto act = std::make_shared<StoreAction>();
+        main_init_block->actions.push_back(act);
+        act->ty = var_def->type;
+        act->ptr_full = "@.var.global." + var_def->name_raw + ".addrkp";
+        act->value_full = init_var;
+      }
     }
   } else {
     for (const auto &var : node->vars) {
@@ -389,11 +433,81 @@ void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(NewConstructExpr_ASTNode *node) {
-  // TODO: Implement function body
+  std::string class_name = std::get<IdentifierType>(node->expr_type_info);
+  if (already_set_constructor.find(class_name) != already_set_constructor.end()) {
+    node->IR_result_full = "#.classconstruct." + class_name;
+    return;
+  }
+  already_set_constructor.insert(class_name);
+  std::string construct_func_name = ".classconstruct." + class_name;
+  auto construct_func = std::make_shared<FunctionDefItem>();
+  prog->function_defs.push_back(construct_func);
+  construct_func->return_type = LLVMIRPTRType();
+  construct_func->func_name_raw = construct_func_name;
+  auto block = std::make_shared<BlockItem>();
+  construct_func->basic_blocks.push_back(block);
+  block->label_full = "label_construct_" + class_name;
+  IRClassInfo class_info = global_scope->fetch_class_info(class_name);
+  std::string allocated_addr = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  auto malloc_call = std::make_shared<CallItem>();
+  block->actions.push_back(malloc_call);
+  malloc_call->result_full = allocated_addr;
+  malloc_call->return_type = LLVMIRPTRType();
+  malloc_call->func_name_raw = "malloc";  // just use libc malloc
+  malloc_call->args_ty.push_back(LLVMIRIntType(32));
+  malloc_call->args_val_full.push_back(std::to_string(class_info.class_size_after_align));
+  if (class_info.has_user_specified_constructor) {
+    auto call_act = std::make_shared<CallItem>();
+    block->actions.push_back(call_act);
+    call_act->return_type = LLVMVOIDType();
+    call_act->func_name_raw = class_name + "." + class_name;
+    call_act->args_ty.push_back(LLVMIRPTRType());
+    call_act->args_val_full.push_back(allocated_addr);
+  }
+  auto ret_act = std::make_shared<RETAction>();
+  block->exit_action = ret_act;
+  ret_act->type = LLVMIRPTRType();
+  ret_act->value = allocated_addr;
+  node->IR_result_full = "#" + construct_func_name;
 }
 
 void IRBuilder::ActuralVisit(NewExpr_ASTNode *node) {
-  // TODO: Implement function body
+  std::string class_name = std::get<IdentifierType>(node->expr_type_info);
+  if (already_set_constructor.find(class_name) != already_set_constructor.end()) {
+    node->IR_result_full = "#.classconstruct." + class_name;
+    return;
+  }
+  already_set_constructor.insert(class_name);
+  std::string construct_func_name = ".classconstruct." + class_name;
+  auto construct_func = std::make_shared<FunctionDefItem>();
+  prog->function_defs.push_back(construct_func);
+  construct_func->return_type = LLVMIRPTRType();
+  construct_func->func_name_raw = construct_func_name;
+  auto block = std::make_shared<BlockItem>();
+  construct_func->basic_blocks.push_back(block);
+  block->label_full = "label_construct_" + class_name;
+  IRClassInfo class_info = global_scope->fetch_class_info(class_name);
+  std::string allocated_addr = "%.var.tmp." + std::to_string(tmp_var_counter++);
+  auto malloc_call = std::make_shared<CallItem>();
+  block->actions.push_back(malloc_call);
+  malloc_call->result_full = allocated_addr;
+  malloc_call->return_type = LLVMIRPTRType();
+  malloc_call->func_name_raw = "malloc";  // just use libc malloc
+  malloc_call->args_ty.push_back(LLVMIRIntType(32));
+  malloc_call->args_val_full.push_back(std::to_string(class_info.class_size_after_align));
+  if (class_info.has_user_specified_constructor) {
+    auto call_act = std::make_shared<CallItem>();
+    block->actions.push_back(call_act);
+    call_act->return_type = LLVMVOIDType();
+    call_act->func_name_raw = class_name + "." + class_name;
+    call_act->args_ty.push_back(LLVMIRPTRType());
+    call_act->args_val_full.push_back(allocated_addr);
+  }
+  auto ret_act = std::make_shared<RETAction>();
+  block->exit_action = ret_act;
+  ret_act->type = LLVMIRPTRType();
+  ret_act->value = allocated_addr;
+  node->IR_result_full = "#" + construct_func_name;
 }
 
 void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
@@ -783,8 +897,8 @@ void IRBuilder::ActuralVisit(AssignExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(ThisExpr_ASTNode *node) {
-  // TODO: Implement function body
-  throw std::runtime_error("this not supported");
+  size_t scope_id = cur_func_scope->scope_id;
+  node->IR_result_full = "%.var.local." + std::to_string(scope_id) + ".this.val";
 }
 
 void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
@@ -794,7 +908,7 @@ void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
 
 void IRBuilder::ActuralVisit(IDExpr_ASTNode *node) {
   IRVariableInfo var_info = node->current_scope->fetch_variable_for_IR(node->id);
-  if (var_info.variable_type == 0 || var_info.variable_type == 1) {
+  if (var_info.variable_type == 0 || var_info.variable_type == 1 || var_info.variable_type == 3) {
     if (node->is_requiring_lvalue) {
       node->IR_result_full = var_info.GenerateFullName();
       return;
@@ -806,13 +920,29 @@ void IRBuilder::ActuralVisit(IDExpr_ASTNode *node) {
     act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
     node->IR_result_full = act->result_full;
   } else if (var_info.variable_type == 2) {
-    throw std::runtime_error("not support for class member access");
-  } else if (var_info.variable_type == 3) {
+    size_t scope_id = cur_func_scope->scope_id;
+    std::string this_ptr = "%.var.local." + std::to_string(scope_id) + ".this.val";
+    std::string class_name = cur_class_name;
+    std::string member_var_name = var_info.variable_name_raw;
+    IRClassInfo class_info = global_scope->fetch_class_info(class_name);
+    size_t idx = class_info.member_var_offset[member_var_name];
+    auto member_addr_cal = std::make_shared<GetElementPtrAction>();
+    cur_block->actions.push_back(member_addr_cal);
+    member_addr_cal->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    member_addr_cal->ty = LLVMIRCLASSTYPE{"%.class." + class_name};
+    member_addr_cal->ptr_full = this_ptr;
+    member_addr_cal->indices.push_back("0");
+    member_addr_cal->indices.push_back(std::to_string(idx));
     if (node->is_requiring_lvalue) {
-      throw std::runtime_error("for argument, lvalue support need additional work");
+      node->IR_result_full = member_addr_cal->result_full;
+    } else {
+      auto member_val_load = std::make_shared<LoadAction>();
+      cur_block->actions.push_back(member_val_load);
+      member_val_load->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      member_val_load->ty = class_info.member_var_type[idx];
+      member_val_load->ptr_full = member_addr_cal->result_full;
+      node->IR_result_full = member_val_load->result_full;
     }
-    node->IR_result_full = var_info.GenerateFullName();
-    return;
   } else {
     throw std::runtime_error("unknown variable type");
   }
@@ -828,8 +958,25 @@ void IRBuilder::ActuralVisit(FunctionCallExpr_ASTNode *node) {
     }
   }
   if (is_member_func) {
-    // TODO: member function call
-    throw std::runtime_error("not support for class member function call");
+    size_t scope_id = cur_func_scope->scope_id;
+    std::string this_ptr = "%.var.local." + std::to_string(scope_id) + ".this.val";
+    std::string class_name = cur_class_name;
+    std::string full_func_name = class_name + "." + node->func_name;
+    auto call = std::make_shared<CallItem>();
+    call->return_type = Type_AST2LLVM(node->expr_type_info);
+    call->func_name_raw = full_func_name;
+    call->args_val_full.push_back(this_ptr);
+    call->args_ty.push_back(LLVMIRPTRType());
+    for (auto &arg : node->arguments) {
+      arg->accept(this);
+      call->args_val_full.push_back(arg->IR_result_full);
+      call->args_ty.push_back(Type_AST2LLVM(arg->expr_type_info));
+    }
+    cur_block->actions.push_back(call);
+    if (!std::holds_alternative<LLVMVOIDType>(call->return_type)) {
+      call->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      node->IR_result_full = call->result_full;
+    }
   } else {
     auto call = std::make_shared<CallItem>();
     call->return_type = Type_AST2LLVM(node->expr_type_info);
