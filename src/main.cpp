@@ -22,11 +22,12 @@ int main(int argc, char **argv) {
   auto input_file = program.get<std::string>("input");
   auto output_file = program.get<std::string>("output");
   std::ifstream fin(input_file);
+  std::ofstream fout(output_file);
   std::shared_ptr<Program_ASTNode> ast;
   try {
     SemanticCheck(fin, ast);
     auto IR = BuildIR(ast);
-    IR->RecursivePrint(std::cout);
+    IR->RecursivePrint(fout);
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;
     return err.GetErrorCode();
