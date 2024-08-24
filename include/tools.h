@@ -181,7 +181,7 @@ inline LLVMType Type_AST2LLVM(const ExprTypeInfo &src) {
   return LLVMIRPTRType();
 }
 
-inline std::string StringLiteralDeEscape(const std::string src) {
+inline std::string StringLiteralDeEscape(const std::string &src) {
   std::stringstream ss;
   for (size_t i = 1; i < src.size() - 1; i++) {
     if (src[i] != '\\')
@@ -205,6 +205,39 @@ inline std::string StringLiteralDeEscape(const std::string src) {
       else
         throw std::runtime_error("Invalid escape character");
     }
+  }
+  return ss.str();
+}
+
+inline std::string FmtStrLiteralDeEscape(const std::string &src) {
+  std::stringstream ss;
+  for (size_t i = 0; i < src.size(); i++) {
+    if (src[i] == '\\') {
+      i++;
+      if (src[i] == 'n')
+        ss << '\n';
+      else if (src[i] == 'r')
+        ss << '\r';
+      else if (src[i] == 't')
+        ss << '\t';
+      else if (src[i] == '\\')
+        ss << '\\';
+      else if (src[i] == '\'')
+        ss << '\'';
+      else if (src[i] == '\"')
+        ss << '\"';
+      else if (src[i] == '0')
+        ss << '\0';
+      else
+        throw std::runtime_error("Invalid escape character");
+    } else if (src[i] == '$') {
+      i++;
+      if (src[i] == '$')
+        ss << '$';
+      else
+        throw std::runtime_error("Invalid escape character");
+    } else
+      ss << src[i];
   }
   return ss.str();
 }

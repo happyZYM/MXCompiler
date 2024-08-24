@@ -336,6 +336,7 @@ class PhiItem : public ActionItem {
   }
 };
 class SelectItem : public ActionItem {
+  friend class IRBuilder;
   std::string result_full;
   std::string cond_full;
   std::string true_val_full;
@@ -449,6 +450,7 @@ class FunctionDeclareItem : public LLVMIRItemBase {
   }
 };
 class ConstStrItem : public LLVMIRItemBase {
+  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
   friend class IRBuilder;
   std::string string_raw;
   size_t const_str_id;
