@@ -1,6 +1,7 @@
 # 定义变量
 BUILD_DIR := makebuild            # 构建目录
 CMAKE_BUILD_TYPE := Release   # 构建类型，可以是 Release 或 Debug
+BUILTIN_ASM := src/IR/builtin.s	# 内置汇编文件
 
 # 默认目标
 all: build
@@ -14,6 +15,7 @@ build:
 # 运行目标，运行生成的可执行文件
 run:
 	@cd $(BUILD_DIR) && ./zmxcc /dev/stdin -o /dev/stdout 2>/dev/null
+	@cat $(BUILTIN_ASM) >>/dev/stdout
 
 # 清理目标
 clean:

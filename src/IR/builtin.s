@@ -58,8 +58,8 @@
 	lw	s4, 8(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 32
 	ret
-.Lfunc_end0:
-	.size	.builtin.strcat, .Lfunc_end0-.builtin.strcat
+.builtin_Lfunc_end0:
+	.size	.builtin.strcat, .builtin_Lfunc_end0-.builtin.strcat
                                         # -- End function
 	.option	pop
 	.option	push
@@ -78,8 +78,8 @@ string.length:                          # @string.length
 # %bb.2:
 	addi	a0, a1, -1
 	ret
-.Lfunc_end1:
-	.size	string.length, .Lfunc_end1-string.length
+.builtin_Lfunc_end1:
+	.size	string.length, .builtin_Lfunc_end1-string.length
                                         # -- End function
 	.option	pop
 	.option	push
@@ -118,8 +118,8 @@ string.substring:                       # @string.substring
 	lw	s2, 0(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end2:
-	.size	string.substring, .Lfunc_end2-string.substring
+.builtin_Lfunc_end2:
+	.size	string.substring, .builtin_Lfunc_end2-string.substring
                                         # -- End function
 	.option	pop
 	.option	push
@@ -131,16 +131,16 @@ string.parseInt:                        # @string.parseInt
 # %bb.0:
 	addi	sp, sp, -16
 	sw	ra, 12(sp)                      # 4-byte Folded Spill
-	lui	a1, %hi(.L.str)
-	addi	a1, a1, %lo(.L.str)
+	lui	a1, %hi(.builtin_L.str)
+	addi	a1, a1, %lo(.builtin_L.str)
 	addi	a2, sp, 8
 	call	sscanf
 	lw	a0, 8(sp)
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end3:
-	.size	string.parseInt, .Lfunc_end3-string.parseInt
+.builtin_Lfunc_end3:
+	.size	string.parseInt, .builtin_Lfunc_end3-string.parseInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -153,8 +153,8 @@ string.ord:                             # @string.ord
 	add	a0, a0, a1
 	lbu	a0, 0(a0)
 	ret
-.Lfunc_end4:
-	.size	string.ord, .Lfunc_end4-string.ord
+.builtin_Lfunc_end4:
+	.size	string.ord, .builtin_Lfunc_end4-string.ord
                                         # -- End function
 	.option	pop
 	.option	push
@@ -164,14 +164,14 @@ string.ord:                             # @string.ord
 	.type	print,@function
 print:                                  # @print
 # %bb.0:
-	lui	a1, %hi(.L.str.1)
-	addi	a1, a1, %lo(.L.str.1)
+	lui	a1, %hi(.builtin_L.str.1)
+	addi	a1, a1, %lo(.builtin_L.str.1)
 	mv	a2, a0
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end5:
-	.size	print, .Lfunc_end5-print
+.builtin_Lfunc_end5:
+	.size	print, .builtin_Lfunc_end5-print
                                         # -- End function
 	.option	pop
 	.option	push
@@ -181,14 +181,14 @@ print:                                  # @print
 	.type	println,@function
 println:                                # @println
 # %bb.0:
-	lui	a1, %hi(.L.str.2)
-	addi	a1, a1, %lo(.L.str.2)
+	lui	a1, %hi(.builtin_L.str.2)
+	addi	a1, a1, %lo(.builtin_L.str.2)
 	mv	a2, a0
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end6:
-	.size	println, .Lfunc_end6-println
+.builtin_Lfunc_end6:
+	.size	println, .builtin_Lfunc_end6-println
                                         # -- End function
 	.option	pop
 	.option	push
@@ -198,14 +198,14 @@ println:                                # @println
 	.type	printInt,@function
 printInt:                               # @printInt
 # %bb.0:
-	lui	a1, %hi(.L.str)
-	addi	a1, a1, %lo(.L.str)
+	lui	a1, %hi(.builtin_L.str)
+	addi	a1, a1, %lo(.builtin_L.str)
 	mv	a2, a0
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end7:
-	.size	printInt, .Lfunc_end7-printInt
+.builtin_Lfunc_end7:
+	.size	printInt, .builtin_Lfunc_end7-printInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -215,14 +215,14 @@ printInt:                               # @printInt
 	.type	printlnInt,@function
 printlnInt:                             # @printlnInt
 # %bb.0:
-	lui	a1, %hi(.L.str.3)
-	addi	a1, a1, %lo(.L.str.3)
+	lui	a1, %hi(.builtin_L.str.3)
+	addi	a1, a1, %lo(.builtin_L.str.3)
 	mv	a2, a0
 	mv	a0, a1
 	mv	a1, a2
 	tail	printf
-.Lfunc_end8:
-	.size	printlnInt, .Lfunc_end8-printlnInt
+.builtin_Lfunc_end8:
+	.size	printlnInt, .builtin_Lfunc_end8-printlnInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -240,8 +240,8 @@ toString:                               # @toString
 	li	a0, 15
 	call	malloc
 	mv	s1, a0
-	lui	a0, %hi(.L.str)
-	addi	a1, a0, %lo(.L.str)
+	lui	a0, %hi(.builtin_L.str)
+	addi	a1, a0, %lo(.builtin_L.str)
 	mv	a0, s1
 	mv	a2, s0
 	call	sprintf
@@ -251,8 +251,8 @@ toString:                               # @toString
 	lw	s1, 4(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end9:
-	.size	toString, .Lfunc_end9-toString
+.builtin_Lfunc_end9:
+	.size	toString, .builtin_Lfunc_end9-toString
                                         # -- End function
 	.option	pop
 	.option	push
@@ -277,8 +277,8 @@ getString:                              # @getString
 	li	a0, 11
 	call	malloc
 	mv	s3, a0
-	lui	a0, %hi(.L.str.4)
-	addi	s0, a0, %lo(.L.str.4)
+	lui	a0, %hi(.builtin_L.str.4)
+	addi	s0, a0, %lo(.builtin_L.str.4)
 	addi	a1, sp, 3
 	mv	a0, s0
 	call	scanf
@@ -375,8 +375,8 @@ getString:                              # @getString
 	lw	s9, 4(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 48
 	ret
-.Lfunc_end10:
-	.size	getString, .Lfunc_end10-getString
+.builtin_Lfunc_end10:
+	.size	getString, .builtin_Lfunc_end10-getString
                                         # -- End function
 	.option	pop
 	.option	push
@@ -388,16 +388,16 @@ getInt:                                 # @getInt
 # %bb.0:
 	addi	sp, sp, -16
 	sw	ra, 12(sp)                      # 4-byte Folded Spill
-	lui	a0, %hi(.L.str)
-	addi	a0, a0, %lo(.L.str)
+	lui	a0, %hi(.builtin_L.str)
+	addi	a0, a0, %lo(.builtin_L.str)
 	addi	a1, sp, 8
 	call	scanf
 	lw	a0, 8(sp)
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end11:
-	.size	getInt, .Lfunc_end11-getInt
+.builtin_Lfunc_end11:
+	.size	getInt, .builtin_Lfunc_end11-getInt
                                         # -- End function
 	.option	pop
 	.option	push
@@ -408,8 +408,8 @@ getInt:                                 # @getInt
 .builtin.AllocateClassBody:             # @.builtin.AllocateClassBody
 # %bb.0:
 	tail	malloc
-.Lfunc_end12:
-	.size	.builtin.AllocateClassBody, .Lfunc_end12-.builtin.AllocateClassBody
+.builtin_Lfunc_end12:
+	.size	.builtin.AllocateClassBody, .builtin_Lfunc_end12-.builtin.AllocateClassBody
                                         # -- End function
 	.option	pop
 	.option	push
@@ -430,8 +430,8 @@ getInt:                                 # @getInt
 	or	a0, a0, a3
 	or	a0, a0, a1
 	ret
-.Lfunc_end13:
-	.size	.builtin.GetArrayLength, .Lfunc_end13-.builtin.GetArrayLength
+.builtin_Lfunc_end13:
+	.size	.builtin.GetArrayLength, .builtin_Lfunc_end13-.builtin.GetArrayLength
                                         # -- End function
 	.option	pop
 	.option	push
@@ -510,8 +510,8 @@ getInt:                                 # @getInt
 	lw	s7, 12(sp)                      # 4-byte Folded Reload
 	addi	sp, sp, 48
 	ret
-.Lfunc_end14:
-	.size	.builtin.RecursiveAllocateArray, .Lfunc_end14-.builtin.RecursiveAllocateArray
+.builtin_Lfunc_end14:
+	.size	.builtin.RecursiveAllocateArray, .builtin_Lfunc_end14-.builtin.RecursiveAllocateArray
                                         # -- End function
 	.option	pop
 	.option	push
@@ -541,35 +541,35 @@ getInt:                                 # @getInt
 	lw	s0, 8(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 16
 	ret
-.Lfunc_end15:
-	.size	.builtin.AllocateArray, .Lfunc_end15-.builtin.AllocateArray
+.builtin_Lfunc_end15:
+	.size	.builtin.AllocateArray, .builtin_Lfunc_end15-.builtin.AllocateArray
                                         # -- End function
 	.option	pop
-	.type	.L.str,@object                  # @.str
+	.type	.builtin_L.str,@object                  # @.str
 	.section	.rodata.str1.1,"aMS",@progbits,1
-.L.str:
+.builtin_L.str:
 	.asciz	"%d"
-	.size	.L.str, 3
+	.size	.builtin_L.str, 3
 
-	.type	.L.str.1,@object                # @.str.1
-.L.str.1:
+	.type	.builtin_L.str.1,@object                # @.str.1
+.builtin_L.str.1:
 	.asciz	"%s"
-	.size	.L.str.1, 3
+	.size	.builtin_L.str.1, 3
 
-	.type	.L.str.2,@object                # @.str.2
-.L.str.2:
+	.type	.builtin_L.str.2,@object                # @.str.2
+.builtin_L.str.2:
 	.asciz	"%s\n"
-	.size	.L.str.2, 4
+	.size	.builtin_L.str.2, 4
 
-	.type	.L.str.3,@object                # @.str.3
-.L.str.3:
+	.type	.builtin_L.str.3,@object                # @.str.3
+.builtin_L.str.3:
 	.asciz	"%d\n"
-	.size	.L.str.3, 4
+	.size	.builtin_L.str.3, 4
 
-	.type	.L.str.4,@object                # @.str.4
-.L.str.4:
+	.type	.builtin_L.str.4,@object                # @.str.4
+.builtin_L.str.4:
 	.asciz	"%c"
-	.size	.L.str.4, 3
+	.size	.builtin_L.str.4, 3
 
 	.ident	"Ubuntu clang version 18.1.8 (++20240731024944+3b5b5c1ec4a3-1~exp1~20240731145000.144)"
 	.section	".note.GNU-stack","",@progbits

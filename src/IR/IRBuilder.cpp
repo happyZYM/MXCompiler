@@ -72,7 +72,9 @@ void IRBuilder::ActuralVisit(FuncDef_ASTNode *node) {
   std::dynamic_pointer_cast<UNConditionJMPAction>(cur_func->init_block->exit_action)->label_full =
       current_block->label_full;
   is_in_func_def = true;
+  cur_alloca_block=func_def->init_block;
   node->func_body->accept(this);
+  cur_alloca_block=main_init_block;
   is_in_func_def = false;
 
   if (!(cur_block->exit_action)) {
@@ -101,6 +103,7 @@ void IRBuilder::ActuralVisit(ClassDef_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(Program_ASTNode *node) {
+  cur_alloca_block=main_init_block;
   for (auto ch : node->sorted_children) {
     ch->accept(this);
   }
@@ -149,7 +152,7 @@ void IRBuilder::ActuralVisit(DefinitionStatement_ASTNode *node) {
   } else {
     for (const auto &var : node->vars) {
       auto var_def = std::make_shared<AllocaAction>();
-      cur_block->actions.push_back(var_def);
+      cur_alloca_block->actions.push_back(var_def);
       var_def->num = 1;
       var_def->type = Type_AST2LLVM(node->var_type);
       var_def->name_full = "%.var.local." + std::to_string(node->current_scope->scope_id) + "." + var.first + ".addrkp";
@@ -411,7 +414,7 @@ void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
 
   auto dim_info = std::make_shared<AllocaAction>();
   std::string dim_info_var = "%.var.tmp." + std::to_string(tmp_var_counter++);
-  block->actions.push_back(dim_info);
+  cur_alloca_block->actions.push_back(dim_info);
   dim_info->num = dims_with_size;
   dim_info->name_full = dim_info_var;
   dim_info->type = LLVMIRIntType(32);

@@ -12,6 +12,7 @@ class IRBuilder : public ASTNodeVirturalVisitor {
   std::shared_ptr<ModuleItem> prog;
   std::shared_ptr<TypeDefItem> cur_class;
   std::shared_ptr<FunctionDefItem> cur_func;
+  std::shared_ptr<BlockItem> cur_alloca_block;
   std::shared_ptr<BlockItem> cur_block;
   std::shared_ptr<BlockItem> main_init_block;
   std::string cur_class_name;
