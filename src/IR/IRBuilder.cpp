@@ -653,7 +653,23 @@ void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
 
 void IRBuilder::ActuralVisit(IndexExpr_ASTNode *node) {
   node->base->accept(this);
-  std::string cur_val = node->base->IR_result_full;
+  std::string base_res = node->base->IR_result_full;
+  if (base_res[0] == '#') {
+    base_res = "%.var.tmp." + std::to_string(tmp_var_counter++);
+    auto const_array_construct_call = std::make_shared<CallItem>();
+    cur_block->actions.push_back(const_array_construct_call);
+    const_array_construct_call->result_full = base_res;
+    const_array_construct_call->return_type = LLVMIRPTRType();
+    const_array_construct_call->func_name_raw = node->base->IR_result_full.substr(1);
+  } else if (base_res[0] == '!') {
+    // inline builder
+    auto inline_builder = inline_builders[base_res.substr(1)];
+    base_res = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+    for (auto &act : inline_builder->actions) {
+      cur_block->actions.push_back(act);
+    }
+  }
+  std::string cur_val = base_res;
   auto type_of_base = node->base->expr_type_info;
   size_t total_dims = std::get<ArrayType>(type_of_base).level;
   std::string cur_addr;
