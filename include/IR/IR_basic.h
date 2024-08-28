@@ -48,6 +48,7 @@ class TypeDefItem : public LLVMIRItemBase {
 };
 class GlobalVarDefItem : public LLVMIRItemBase {
   friend class IRBuilder;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   LLVMType type;
   std::string name_raw;
 
@@ -66,9 +67,13 @@ class GlobalVarDefItem : public LLVMIRItemBase {
   }
 };
 class ActionItem : public LLVMIRItemBase {};
-class JMPActionItem : public ActionItem {};
+class JMPActionItem : public ActionItem {
+ public:
+  std::shared_ptr<class PhiItem> corresponding_phi;
+};
 class BRAction : public JMPActionItem {
   friend class IRBuilder;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   std::string cond;
   std::string true_label_full;
   std::string false_label_full;
@@ -82,6 +87,7 @@ class BRAction : public JMPActionItem {
 class UNConditionJMPAction : public JMPActionItem {
   friend class IRBuilder;
   friend class FunctionDefItem;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   std::string label_full;
 
  public:
@@ -91,6 +97,7 @@ class UNConditionJMPAction : public JMPActionItem {
 class RETAction : public JMPActionItem {
   friend class IRBuilder;
   friend class FunctionDefItem;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   LLVMType type;
   std::string value;
 
@@ -108,8 +115,12 @@ class RETAction : public JMPActionItem {
     }
   }
 };
+namespace NaiveBackend {
+void ScanForVar(class FuncLayout &layout, std::shared_ptr<ActionItem> action);
+}
 class BinaryOperationAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string op;
   std::string operand1_full;
   std::string operand2_full;
@@ -134,6 +145,7 @@ class BinaryOperationAction : public ActionItem {
 };
 class AllocaAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string name_full;
   LLVMType type;
   size_t num;
@@ -157,6 +169,7 @@ class AllocaAction : public ActionItem {
 };
 class LoadAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
@@ -177,6 +190,7 @@ class LoadAction : public ActionItem {
 };
 class StoreAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   LLVMType ty;
   std::string value_full;
   std::string ptr_full;
@@ -197,6 +211,7 @@ class StoreAction : public ActionItem {
 };
 class GetElementPtrAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
@@ -224,6 +239,7 @@ class GetElementPtrAction : public ActionItem {
 };
 class ICMPAction : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string op;
   std::string operand1_full;
   std::string operand2_full;
@@ -247,6 +263,8 @@ class ICMPAction : public ActionItem {
 class BlockItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend class FunctionDefItem;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
@@ -263,6 +281,7 @@ class BlockItem : public LLVMIRItemBase {
 };
 class CallItem : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string result_full;
   LLVMType return_type;
   std::string func_name_raw;
@@ -311,6 +330,7 @@ class CallItem : public ActionItem {
 
 class PhiItem : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string result_full;
   LLVMType ty;
   std::vector<std::pair<std::string, std::string>> values;  // (val_i_full, label_i_full)
@@ -337,6 +357,7 @@ class PhiItem : public ActionItem {
 };
 class SelectItem : public ActionItem {
   friend class IRBuilder;
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action);
   std::string result_full;
   std::string cond_full;
   std::string true_val_full;
@@ -367,6 +388,7 @@ class SelectItem : public ActionItem {
 };
 class FunctionDefItem : public LLVMIRItemBase {
   friend class IRBuilder;
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   LLVMType return_type;
   std::string func_name_raw;
   std::vector<LLVMType> args;
@@ -451,6 +473,7 @@ class FunctionDeclareItem : public LLVMIRItemBase {
 };
 class ConstStrItem : public LLVMIRItemBase {
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   friend class IRBuilder;
   std::string string_raw;
   size_t const_str_id;
@@ -484,11 +507,13 @@ class ConstStrItem : public LLVMIRItemBase {
 class ModuleItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   std::vector<std::shared_ptr<ConstStrItem>> const_strs;
   std::vector<std::shared_ptr<FunctionDeclareItem>> function_declares;
   std::vector<std::shared_ptr<TypeDefItem>> type_defs;
   std::vector<std::shared_ptr<GlobalVarDefItem>> global_var_defs;
   std::vector<std::shared_ptr<FunctionDefItem>> function_defs;
+  std::unordered_map<std::string, IRClassInfo> low_level_class_info;
 
  public:
   ModuleItem() = default;

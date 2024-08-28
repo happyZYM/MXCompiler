@@ -28,8 +28,8 @@ int main(int argc, char **argv) {
   try {
     SemanticCheck(fin, ast);
     auto IR = BuildIR(ast);
-    IR->RecursivePrint(fout);
-    // GenerateNaiveASM(fout, IR);
+    IR->RecursivePrint(std::cerr);
+    GenerateNaiveASM(fout, IR);
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;
     return err.GetErrorCode();
