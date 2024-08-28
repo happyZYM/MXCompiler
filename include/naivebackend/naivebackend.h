@@ -1,4 +1,5 @@
 #pragma once
+#include <cctype>
 #include <cstddef>
 #include <ios>
 #include <memory>
@@ -93,8 +94,12 @@ class FuncLayout {
   friend void ::GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   friend void GenerateReadAccess(std::string val, size_t bytes, std::string output_reg, FuncLayout &layout,
                                  std::vector<std::string> &code_lines);
-  friend inline void GenerateWriteAccess(std::string val, size_t bytes, std::string data_reg, FuncLayout &layout,
-                                         std::vector<std::string> &code_lines);
+  friend void GenerateWriteAccess(std::string val, size_t bytes, std::string data_reg, FuncLayout &layout,
+                                  std::vector<std::string> &code_lines);
+  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
+                                        FuncLayout &layout,
+                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
+                                        bool process_phi);
   std::unordered_map<std::string, size_t> local_items;
   std::unordered_map<std::string, size_t> arg_offset;
   size_t cur_pos;
@@ -127,7 +132,8 @@ inline void GenerateReadAccess(std::string val, size_t bytes, std::string output
     }
     size_t offset = layout.arg_offset.at(val);
     if (offset < 8) {
-      output_reg = "a" + std::to_string(offset);
+      std::string src_reg = "a" + std::to_string(offset);
+      code_lines.push_back("mv " + output_reg + ", " + src_reg);
     } else {
       size_t spilled_offset = (offset - 8) * 4;  // just*4, which is different from the real riscv
       std::string cmd;
@@ -137,7 +143,7 @@ inline void GenerateReadAccess(std::string val, size_t bytes, std::string output
         cmd = "lw";
       else
         throw std::runtime_error("Unknown bytes");
-      cmd += " " + output_reg + ", " + std::to_string(spilled_offset) + "(fp)";
+      cmd += " " + output_reg + ", " + std::to_string(spilled_offset) + "(s0)";
       code_lines.push_back(cmd);
     }
   } else if (val.size() > 13 && val.substr(0, 13) == "@.var.global.") {
@@ -147,20 +153,47 @@ inline void GenerateReadAccess(std::string val, size_t bytes, std::string output
   } else if (val.size() > 12 && val.substr(0, 12) == "%.var.local.") {
     // local variable address keeper
     size_t offset = layout.QueryOffeset(val);
-    code_lines.push_back("addi " + output_reg + ", fp, -" + std::to_string(offset));
+    code_lines.push_back("addi " + output_reg + ", s0, -" + std::to_string(offset));
   } else if (val.size() > 10 && val.substr(0, 10) == "%.var.tmp.") {
     // tmp variable, not address keeper
     size_t offset = layout.QueryOffeset(val);
-    code_lines.push_back("addi " + output_reg + ", fp, -" + std::to_string(offset));
     if (bytes == 1) {
-      code_lines.push_back("lb " + output_reg + ", 0(" + output_reg + ")");
+      code_lines.push_back("lb " + output_reg + ", -" + std::to_string(offset) + "(s0)");
     } else if (bytes == 4) {
-      code_lines.push_back("lw " + output_reg + ", 0(" + output_reg + ")");
+      code_lines.push_back("lw " + output_reg + ", -" + std::to_string(offset) + "(s0)");
     } else {
       throw std::runtime_error("Unknown bytes");
     }
+  } else if (val.size() > 6 && val.substr(0, 6) == "@.str.") {
+    code_lines.push_back("la " + output_reg.substr(1, output_reg.size() - 1) + ", " + val);
   } else {
     throw std::runtime_error("Unknown variable type with name=" + val);
+  }
+}
+inline void StoreImmToReg(int imm, std::string reg, std::vector<std::string> &code_lines) {
+  // if (imm >= 2048) {
+  //   code_lines.push_back("lui " + reg + ", " + std::to_string(imm >> 12));
+  //   code_lines.push_back("ori " + reg + ", " + reg + ", " + std::to_string(imm & 0x7ff));
+  // } else {
+  //   code_lines.push_back("ori " + reg + ", x0, " + std::to_string(imm));
+  // }
+  code_lines.push_back("li " + reg + ", " + std::to_string(imm));
+}
+inline void IRVar2RISCVReg(std::string val, size_t bytes, std::string output_reg, FuncLayout &layout,
+                           std::vector<std::string> &code_lines) {
+  if (val[0] == '-') {
+    if (val == "-1") {
+      StoreImmToReg(-1, output_reg, code_lines);
+      return;
+    }
+    throw std::runtime_error("Negative imm in IR is not supported");
+  }
+  if (val == "null") {
+    StoreImmToReg(0, output_reg, code_lines);
+  } else if (std::isdigit(val[0])) {
+    StoreImmToReg(std::stoull(val), output_reg, code_lines);
+  } else {
+    GenerateReadAccess(val, bytes, output_reg, layout, code_lines);
   }
 }
 inline void GenerateWriteAccess(std::string val, size_t bytes, std::string data_reg, FuncLayout &layout,
@@ -177,17 +210,30 @@ inline void GenerateWriteAccess(std::string val, size_t bytes, std::string data_
   } else if (val.size() > 10 && val.substr(0, 10) == "%.var.tmp.") {
     // tmp variable, not address keeper
     size_t offset = layout.QueryOffeset(val);
-    code_lines.push_back("addi " + data_reg + ", fp, -" + std::to_string(offset));
     if (bytes == 1) {
-      code_lines.push_back("sb " + data_reg + ", 0(" + data_reg + ")");
+      code_lines.push_back("sb " + data_reg + ", -" + std::to_string(offset) + "(s0)");
     } else if (bytes == 4) {
-      code_lines.push_back("sw " + data_reg + ", 0(" + data_reg + ")");
+      code_lines.push_back("sw " + data_reg + ", -" + std::to_string(offset) + "(s0)");
     } else {
       throw std::runtime_error("Unknown bytes");
     }
   } else {
     throw std::runtime_error("Unknown variable type with name=" + val);
   }
+}
+inline size_t CalcSize(const LLVMType &tp) {
+  if (std::holds_alternative<LLVMIRIntType>(tp)) {
+    auto &int_tp = std::get<LLVMIRIntType>(tp);
+    return (int_tp.bits + 7) / 8;
+  } else if (std::holds_alternative<LLVMIRPTRType>(tp)) {
+    return 4;
+  } else if (std::holds_alternative<LLVMVOIDType>(tp)) {
+    throw std::runtime_error("Cannot calculate size of void type");
+    return 0;
+  } else if (std::holds_alternative<LLVMIRCLASSTYPE>(tp)) {
+    throw std::runtime_error("Cannot calculate size of class type");
+  } else
+    throw std::runtime_error("Unknown type");
 }
 }  // namespace NaiveBackend
 

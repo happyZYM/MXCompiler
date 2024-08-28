@@ -12,9 +12,10 @@ build:
 	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -Wno-dev ..
 	@cd $(BUILD_DIR) && $(MAKE) -j4
 
-# 运行目标，运行生成的可执行文件
-run:
+acturalrun:
 	@cd $(BUILD_DIR) && ./zmxcc /dev/stdin -o /dev/stdout 2>/dev/null
+# 运行目标，运行生成的可执行文件
+run: acturalrun
 	@cat $(BUILTIN_ASM) >>/dev/stdout
 
 # 清理目标

@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
   try {
     SemanticCheck(fin, ast);
     auto IR = BuildIR(ast);
+    // IR->RecursivePrint(fout); return 0;
     IR->RecursivePrint(std::cerr);
     GenerateNaiveASM(fout, IR);
   } catch (const SemanticError &err) {

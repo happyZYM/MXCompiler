@@ -359,8 +359,24 @@ void IRBuilder::ActuralVisit(JmpStatement_ASTNode *node) {
     // return
     if (node->return_value) {
       node->return_value->accept(this);
+      std::string res = node->return_value->IR_result_full;
+      if (res[0] == '#') {
+        res = "%.var.tmp." + std::to_string(tmp_var_counter++);
+        auto const_array_construct_call = std::make_shared<CallItem>();
+        cur_block->actions.push_back(const_array_construct_call);
+        const_array_construct_call->result_full = res;
+        const_array_construct_call->return_type = LLVMIRPTRType();
+        const_array_construct_call->func_name_raw = node->return_value->IR_result_full.substr(1);
+      } else if (res[0] == '!') {
+        // inline builder
+        auto inline_builder = inline_builders[res.substr(1)];
+        res = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+        for (auto &act : inline_builder->actions) {
+          cur_block->actions.push_back(act);
+        }
+      }
       cur_block->exit_action = std::make_shared<RETAction>();
-      std::dynamic_pointer_cast<RETAction>(cur_block->exit_action)->value = node->return_value->IR_result_full;
+      std::dynamic_pointer_cast<RETAction>(cur_block->exit_action)->value = res;
     } else {
       cur_block->exit_action = std::make_shared<RETAction>();
     }
@@ -534,9 +550,25 @@ void IRBuilder::ActuralVisit(NewExpr_ASTNode *node) {
 void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
   if (!node->is_function) {
     node->base->accept(this);
+    std::string base_res = node->base->IR_result_full;
+    if (base_res[0] == '#') {
+      base_res = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      auto const_array_construct_call = std::make_shared<CallItem>();
+      cur_block->actions.push_back(const_array_construct_call);
+      const_array_construct_call->result_full = base_res;
+      const_array_construct_call->return_type = LLVMIRPTRType();
+      const_array_construct_call->func_name_raw = node->base->IR_result_full.substr(1);
+    } else if (base_res[0] == '!') {
+      // inline builder
+      auto inline_builder = inline_builders[base_res.substr(1)];
+      base_res = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+      for (auto &act : inline_builder->actions) {
+        cur_block->actions.push_back(act);
+      }
+    }
     std::string type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
     IRClassInfo class_info = global_scope->fetch_class_info(type_of_base);
-    std::string base_ptr = node->base->IR_result_full;
+    std::string base_ptr = base_res;
     size_t idx = class_info.member_var_offset[node->member];
     auto member_addr_cal = std::make_shared<GetElementPtrAction>();
     cur_block->actions.push_back(member_addr_cal);
@@ -557,16 +589,48 @@ void IRBuilder::ActuralVisit(AccessExpr_ASTNode *node) {
     }
   } else {
     node->base->accept(this);
+    std::string base_res = node->base->IR_result_full;
+    if (base_res[0] == '#') {
+      base_res = "%.var.tmp." + std::to_string(tmp_var_counter++);
+      auto const_array_construct_call = std::make_shared<CallItem>();
+      cur_block->actions.push_back(const_array_construct_call);
+      const_array_construct_call->result_full = base_res;
+      const_array_construct_call->return_type = LLVMIRPTRType();
+      const_array_construct_call->func_name_raw = node->base->IR_result_full.substr(1);
+    } else if (base_res[0] == '!') {
+      // inline builder
+      auto inline_builder = inline_builders[base_res.substr(1)];
+      base_res = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+      for (auto &act : inline_builder->actions) {
+        cur_block->actions.push_back(act);
+      }
+    }
     std::string type_of_base;
     if (std::holds_alternative<IdentifierType>(node->base->expr_type_info))
       type_of_base = std::get<IdentifierType>(node->base->expr_type_info);
-    std::string base_ptr = node->base->IR_result_full;
+    std::string base_ptr = base_res;
     std::string func_name = type_of_base + "." + node->member;
     if (std::holds_alternative<ArrayType>(node->base->expr_type_info)) func_name = ".builtin.GetArrayLength";
     std::vector<std::string> arg_val;
     for (size_t i = 0; i < node->arguments.size(); i++) {
       node->arguments[i]->accept(this);
-      arg_val.push_back(node->arguments[i]->IR_result_full);
+      std::string arg_value = node->arguments[i]->IR_result_full;
+      if (arg_value[0] == '#') {
+        arg_value = "%.var.tmp." + std::to_string(tmp_var_counter++);
+        auto const_array_construct_call = std::make_shared<CallItem>();
+        cur_block->actions.push_back(const_array_construct_call);
+        const_array_construct_call->result_full = arg_value;
+        const_array_construct_call->return_type = LLVMIRPTRType();
+        const_array_construct_call->func_name_raw = node->arguments[i]->IR_result_full.substr(1);
+      } else if (arg_value[0] == '!') {
+        // inline builder
+        auto inline_builder = inline_builders[arg_value.substr(1)];
+        arg_value = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+        for (auto &act : inline_builder->actions) {
+          cur_block->actions.push_back(act);
+        }
+      }
+      arg_val.push_back(arg_value);
     }
     auto call_act = std::make_shared<CallItem>();
     cur_block->actions.push_back(call_act);
@@ -969,7 +1033,7 @@ void IRBuilder::ActuralVisit(LAndExpr_ASTNode *node) {
   auto right_block_end = cur_block;
   std::dynamic_pointer_cast<UNConditionJMPAction>(cur_block->exit_action)->label_full = new_block->label_full;
   cur_block->exit_action->corresponding_phi = phi_act;
-  
+
   cur_func->basic_blocks.push_back(new_block);
   cur_block = new_block;
   phi_act->result_full = "%.var.tmp." + std::to_string(tmp_var_counter++);
@@ -1005,7 +1069,7 @@ void IRBuilder::ActuralVisit(LOrExpr_ASTNode *node) {
   std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->false_label_full = right_cal_block->label_full;
   std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)->cond = node->left->IR_result_full;
   cur_block->exit_action->corresponding_phi = phi_act;
-  
+
   cur_func->basic_blocks.push_back(right_cal_block);
   cur_block = right_cal_block;
   node->right->accept(this);
@@ -1167,7 +1231,23 @@ void IRBuilder::ActuralVisit(FunctionCallExpr_ASTNode *node) {
     call->args_ty.push_back(LLVMIRPTRType());
     for (auto &arg : node->arguments) {
       arg->accept(this);
-      call->args_val_full.push_back(arg->IR_result_full);
+      std::string arg_value = arg->IR_result_full;
+      if (arg_value[0] == '#') {
+        arg_value = "%.var.tmp." + std::to_string(tmp_var_counter++);
+        auto const_array_construct_call = std::make_shared<CallItem>();
+        cur_block->actions.push_back(const_array_construct_call);
+        const_array_construct_call->result_full = arg_value;
+        const_array_construct_call->return_type = LLVMIRPTRType();
+        const_array_construct_call->func_name_raw = arg->IR_result_full.substr(1);
+      } else if (arg_value[0] == '!') {
+        // inline builder
+        auto inline_builder = inline_builders[arg_value.substr(1)];
+        arg_value = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+        for (auto &act : inline_builder->actions) {
+          cur_block->actions.push_back(act);
+        }
+      }
+      call->args_val_full.push_back(arg_value);
       call->args_ty.push_back(Type_AST2LLVM(arg->expr_type_info));
     }
     cur_block->actions.push_back(call);
@@ -1181,7 +1261,23 @@ void IRBuilder::ActuralVisit(FunctionCallExpr_ASTNode *node) {
     call->func_name_raw = node->func_name;
     for (auto &arg : node->arguments) {
       arg->accept(this);
-      call->args_val_full.push_back(arg->IR_result_full);
+      std::string arg_value = arg->IR_result_full;
+      if (arg_value[0] == '#') {
+        arg_value = "%.var.tmp." + std::to_string(tmp_var_counter++);
+        auto const_array_construct_call = std::make_shared<CallItem>();
+        cur_block->actions.push_back(const_array_construct_call);
+        const_array_construct_call->result_full = arg_value;
+        const_array_construct_call->return_type = LLVMIRPTRType();
+        const_array_construct_call->func_name_raw = arg->IR_result_full.substr(1);
+      } else if (arg_value[0] == '!') {
+        // inline builder
+        auto inline_builder = inline_builders[arg_value.substr(1)];
+        arg_value = std::dynamic_pointer_cast<RETAction>(inline_builder->exit_action)->value;
+        for (auto &act : inline_builder->actions) {
+          cur_block->actions.push_back(act);
+        }
+      }
+      call->args_val_full.push_back(arg_value);
       call->args_ty.push_back(Type_AST2LLVM(arg->expr_type_info));
     }
     cur_block->actions.push_back(call);

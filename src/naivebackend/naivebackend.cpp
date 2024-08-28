@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "IR/IR_basic.h"
 #include "build_layout.hpp"
+#include "codegen.hpp"
 using namespace NaiveBackend;
 void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
   auto riscv = std::make_shared<RISCVProgItem>();
@@ -21,12 +22,12 @@ void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
   for (auto func_def : prog->function_defs) {
     if (func_def->init_block) {
       for (auto act : func_def->init_block->actions) {
-        ScanForVar(func_layouts[func_def->func_name_raw], act);
+        ScanForVar(func_layouts[func_def->func_name_raw], act, prog->low_level_class_info);
       }
     }
     for (auto block : func_def->basic_blocks) {
       for (auto act : block->actions) {
-        ScanForVar(func_layouts[func_def->func_name_raw], act);
+        ScanForVar(func_layouts[func_def->func_name_raw], act, prog->low_level_class_info);
       }
     }
     FuncLayout &layout = func_layouts[func_def->func_name_raw];
@@ -47,11 +48,36 @@ void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
     auto func_asm = std::make_shared<RISCVFuncItem>();
     riscv->funcs.push_back(func_asm);
     func_asm->full_label = func_def->func_name_raw;
+    FuncLayout &layout = func_layouts[func_def->func_name_raw];
+    func_asm->code_lines.push_back("addi sp, sp, -" + std::to_string(layout.total_frame_size));
+    func_asm->code_lines.push_back("sw ra, " + std::to_string(layout.total_frame_size - 4) + "(sp)");
+    func_asm->code_lines.push_back("sw s0, " + std::to_string(layout.total_frame_size - 8) + "(sp)");
+    func_asm->code_lines.push_back("addi s0, sp, " + std::to_string(layout.total_frame_size));
     if (func_def->init_block) {
       func_asm->code_lines.push_back(".entrylabel." + func_def->init_block->label_full + ":");
+      for (auto act : func_def->init_block->actions) {
+        NaiveBackend::GenerateASM(act, func_asm->code_lines, func_layouts[func_def->func_name_raw],
+                                  prog->low_level_class_info);
+      }
+      if (func_def->init_block->exit_action->corresponding_phi) {
+        NaiveBackend::GenerateASM(func_def->init_block->exit_action->corresponding_phi, func_asm->code_lines,
+                                  func_layouts[func_def->func_name_raw], prog->low_level_class_info, true);
+      }
+      NaiveBackend::GenerateASM(func_def->init_block->exit_action, func_asm->code_lines,
+                                func_layouts[func_def->func_name_raw], prog->low_level_class_info);
     }
     for (auto block : func_def->basic_blocks) {
       func_asm->code_lines.push_back(".entrylabel." + block->label_full + ":");
+      for (auto act : block->actions) {
+        NaiveBackend::GenerateASM(act, func_asm->code_lines, func_layouts[func_def->func_name_raw],
+                                  prog->low_level_class_info);
+      }
+      if (block->exit_action->corresponding_phi) {
+        NaiveBackend::GenerateASM(block->exit_action->corresponding_phi, func_asm->code_lines,
+                                  func_layouts[func_def->func_name_raw], prog->low_level_class_info, true);
+      }
+      NaiveBackend::GenerateASM(block->exit_action, func_asm->code_lines, func_layouts[func_def->func_name_raw],
+                                prog->low_level_class_info);
     }
   }
 
