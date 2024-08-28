@@ -153,14 +153,31 @@ inline void GenerateReadAccess(std::string val, size_t bytes, std::string output
   } else if (val.size() > 12 && val.substr(0, 12) == "%.var.local.") {
     // local variable address keeper
     size_t offset = layout.QueryOffeset(val);
-    code_lines.push_back("addi " + output_reg + ", s0, -" + std::to_string(offset));
+    if (offset < 2048) {
+      code_lines.push_back("addi " + output_reg + ", s0, -" + std::to_string(offset));
+    } else {
+      code_lines.push_back("li " + output_reg + ", -" + std::to_string(offset));
+      code_lines.push_back("add " + output_reg + ", s0, " + output_reg);
+    }
   } else if (val.size() > 10 && val.substr(0, 10) == "%.var.tmp.") {
     // tmp variable, not address keeper
     size_t offset = layout.QueryOffeset(val);
     if (bytes == 1) {
-      code_lines.push_back("lb " + output_reg + ", -" + std::to_string(offset) + "(s0)");
+      if (offset < 2048) {
+        code_lines.push_back("lb " + output_reg + ", -" + std::to_string(offset) + "(s0)");
+      } else {
+        code_lines.push_back("li " + output_reg + ", -" + std::to_string(offset));
+        code_lines.push_back("add " + output_reg + ", s0, " + output_reg);
+        code_lines.push_back("lb " + output_reg + ", 0(" + output_reg + ")");
+      }
     } else if (bytes == 4) {
-      code_lines.push_back("lw " + output_reg + ", -" + std::to_string(offset) + "(s0)");
+      if (offset < 2048) {
+        code_lines.push_back("lw " + output_reg + ", -" + std::to_string(offset) + "(s0)");
+      } else {
+        code_lines.push_back("li " + output_reg + ", -" + std::to_string(offset));
+        code_lines.push_back("add " + output_reg + ", s0, " + output_reg);
+        code_lines.push_back("lw " + output_reg + ", 0(" + output_reg + ")");
+      }
     } else {
       throw std::runtime_error("Unknown bytes");
     }
@@ -211,9 +228,21 @@ inline void GenerateWriteAccess(std::string val, size_t bytes, std::string data_
     // tmp variable, not address keeper
     size_t offset = layout.QueryOffeset(val);
     if (bytes == 1) {
-      code_lines.push_back("sb " + data_reg + ", -" + std::to_string(offset) + "(s0)");
+      if (offset < 2048) {
+        code_lines.push_back("sb " + data_reg + ", -" + std::to_string(offset) + "(s0)");
+      } else {
+        code_lines.push_back("li t0, -" + std::to_string(offset));
+        code_lines.push_back("add t0, s0, t0");
+        code_lines.push_back("sb " + data_reg + ", 0(t0)");
+      }
     } else if (bytes == 4) {
-      code_lines.push_back("sw " + data_reg + ", -" + std::to_string(offset) + "(s0)");
+      if (offset < 2048) {
+        code_lines.push_back("sw " + data_reg + ", -" + std::to_string(offset) + "(s0)");
+      } else {
+        code_lines.push_back("li t0, -" + std::to_string(offset));
+        code_lines.push_back("add t0, s0, t0");
+        code_lines.push_back("sw " + data_reg + ", 0(t0)");
+      }
     } else {
       throw std::runtime_error("Unknown bytes");
     }

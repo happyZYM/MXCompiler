@@ -52,10 +52,19 @@ void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
     riscv->funcs.push_back(func_asm);
     func_asm->full_label = func_def->func_name_raw;
     FuncLayout &layout = func_layouts[func_def->func_name_raw];
-    func_asm->code_lines.push_back("addi sp, sp, -" + std::to_string(layout.total_frame_size));
-    func_asm->code_lines.push_back("sw ra, " + std::to_string(layout.total_frame_size - 4) + "(sp)");
-    func_asm->code_lines.push_back("sw s0, " + std::to_string(layout.total_frame_size - 8) + "(sp)");
-    func_asm->code_lines.push_back("addi s0, sp, " + std::to_string(layout.total_frame_size));
+    if (layout.total_frame_size < 2048) {
+      func_asm->code_lines.push_back("addi sp, sp, -" + std::to_string(layout.total_frame_size));
+      func_asm->code_lines.push_back("sw ra, " + std::to_string(layout.total_frame_size - 4) + "(sp)");
+      func_asm->code_lines.push_back("sw s0, " + std::to_string(layout.total_frame_size - 8) + "(sp)");
+      func_asm->code_lines.push_back("addi s0, sp, " + std::to_string(layout.total_frame_size));
+    } else {
+      func_asm->code_lines.push_back("li t0, " + std::to_string(layout.total_frame_size));
+      func_asm->code_lines.push_back("sub sp, sp, t0");
+      func_asm->code_lines.push_back("add t0, t0, sp");
+      func_asm->code_lines.push_back("sw ra, -4(t0)");
+      func_asm->code_lines.push_back("sw s0, -8(t0)");
+      func_asm->code_lines.push_back("mv s0, t0");
+    }
     if (func_def->init_block) {
       func_asm->code_lines.push_back(".entrylabel." + func_def->init_block->label_full + ":");
       for (auto act : func_def->init_block->actions) {

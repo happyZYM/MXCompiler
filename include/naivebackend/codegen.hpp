@@ -21,7 +21,12 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
     }
     code_lines.push_back("lw ra, -4(s0)");
     code_lines.push_back("lw s0, -8(s0)");
-    code_lines.push_back("addi sp, sp, " + std::to_string(layout.total_frame_size));
+    if (layout.total_frame_size < 2048) {
+      code_lines.push_back("addi sp, sp, " + std::to_string(layout.total_frame_size));
+    } else {
+      code_lines.push_back("li t0, " + std::to_string(layout.total_frame_size));
+      code_lines.push_back("add sp, sp, t0");
+    }
     code_lines.push_back("ret");
   } else if (auto binary_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
     size_t sz = CalcSize(binary_act->type);
@@ -94,7 +99,12 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
       const IRClassInfo &class_info = low_level_class_info.at(class_ty.class_name_full);
       size_t offset = class_info.member_var_pos_after_align[element_idx];
       IRVar2RISCVReg(get_element_act->ptr_full, 4, "t0", layout, code_lines);
-      code_lines.push_back("addi t2, t0, " + std::to_string(offset));
+      if (offset < 2048) {
+        code_lines.push_back("addi t2, t0, " + std::to_string(offset));
+      } else {
+        code_lines.push_back("li t1, " + std::to_string(offset));
+        code_lines.push_back("add t2, t0, t1");
+      }
       GenerateWriteAccess(get_element_act->result_full, 4, "t2", layout, code_lines);
     } else {
       throw std::runtime_error("Unknown getelementptr indices size");
@@ -134,7 +144,12 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
     }
     if (num_of_args >= 8) {
       size_t ps_delta = (num_of_args * 4 + 15) / 16 * 16;
-      code_lines.push_back("addi sp, sp, -" + std::to_string(ps_delta));
+      if (ps_delta < 2048) {
+        code_lines.push_back("addi sp, sp, -" + std::to_string(ps_delta));
+      } else {
+        code_lines.push_back("li t0, -" + std::to_string(ps_delta));
+        code_lines.push_back("add sp, sp, t0");
+      }
       for (size_t i = 8; i < num_of_args; i++) {
         IRVar2RISCVReg(call_act->args_val_full[i], CalcSize(call_act->args_ty[i]), "t0", layout, code_lines);
         code_lines.push_back("sw t0, " + std::to_string((i - 8) * 4) + "(sp)");
