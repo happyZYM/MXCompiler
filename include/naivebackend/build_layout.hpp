@@ -39,8 +39,7 @@ inline void ScanForVar(FuncLayout &layout, std::shared_ptr<ActionItem> action,
       size_t element_idx = std::stoi(get_element_act->indices[1]);
       auto class_ty = std::get<LLVMIRCLASSTYPE>(get_element_act->ty);
       const IRClassInfo &class_info = low_level_class_info.at(class_ty.class_name_full);
-      size_t sz = class_info.member_var_size[element_idx];
-      layout.AllocateItem(get_element_act->result_full, sz);
+      layout.AllocateItem(get_element_act->result_full, 4);
     } else {
       throw std::runtime_error("GetElementPtrAction with more than 2 indices is not supported");
     }

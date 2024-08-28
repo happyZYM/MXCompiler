@@ -165,7 +165,7 @@ inline void GenerateReadAccess(std::string val, size_t bytes, std::string output
       throw std::runtime_error("Unknown bytes");
     }
   } else if (val.size() > 6 && val.substr(0, 6) == "@.str.") {
-    code_lines.push_back("la " + output_reg.substr(1, output_reg.size() - 1) + ", " + val);
+    code_lines.push_back("la " + output_reg + ", " + val.substr(1, val.size() - 1));
   } else {
     throw std::runtime_error("Unknown variable type with name=" + val);
   }

@@ -72,7 +72,8 @@ class JMPActionItem : public ActionItem {
   std::shared_ptr<class PhiItem> corresponding_phi;
 };
 namespace NaiveBackend {
-void ScanForVar(class FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+void ScanForVar(class FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
 void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines, FuncLayout &layout,
                  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info, bool process_phi);
 }  // namespace NaiveBackend
@@ -135,7 +136,8 @@ class RETAction : public JMPActionItem {
 
 class BinaryOperationAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
@@ -164,7 +166,8 @@ class BinaryOperationAction : public ActionItem {
 };
 class AllocaAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   std::string name_full;
   LLVMType type;
   size_t num;
@@ -188,7 +191,8 @@ class AllocaAction : public ActionItem {
 };
 class LoadAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
@@ -213,7 +217,8 @@ class LoadAction : public ActionItem {
 };
 class StoreAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
@@ -238,7 +243,12 @@ class StoreAction : public ActionItem {
 };
 class GetElementPtrAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
+                                        NaiveBackend::FuncLayout &layout,
+                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
+                                        bool process_phi);
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
@@ -266,7 +276,8 @@ class GetElementPtrAction : public ActionItem {
 };
 class ICMPAction : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
@@ -295,7 +306,8 @@ class BlockItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend class FunctionDefItem;
   friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
@@ -312,7 +324,8 @@ class BlockItem : public LLVMIRItemBase {
 };
 class CallItem : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
   friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
@@ -365,7 +378,12 @@ class CallItem : public ActionItem {
 
 class PhiItem : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
+                                        NaiveBackend::FuncLayout &layout,
+                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
+                                        bool process_phi);
   std::string result_full;
   LLVMType ty;
   std::vector<std::pair<std::string, std::string>> values;  // (val_i_full, label_i_full)
@@ -392,7 +410,12 @@ class PhiItem : public ActionItem {
 };
 class SelectItem : public ActionItem {
   friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
+                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
+                                        NaiveBackend::FuncLayout &layout,
+                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
+                                        bool process_phi);
   std::string result_full;
   std::string cond_full;
   std::string true_val_full;

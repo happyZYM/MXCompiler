@@ -1,7 +1,10 @@
 #pragma once
+#include <bit>
 #include <stdexcept>
 #include "naivebackend.h"
+#include "tools.h"
 namespace NaiveBackend {
+extern std::string cur_block_label_for_phi;
 inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines, FuncLayout &layout,
                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
                         bool process_phi = false) {
@@ -73,7 +76,29 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
       throw std::runtime_error("Unknown bytes");
     }
   } else if (auto get_element_act = std::dynamic_pointer_cast<GetElementPtrAction>(act)) {
-    // TODO: implement this
+    if (get_element_act->indices.size() == 1) {
+      // array access
+      IRVar2RISCVReg(get_element_act->ptr_full, 4, "t0", layout, code_lines);
+      IRVar2RISCVReg(get_element_act->indices[0], 4, "t1", layout, code_lines);
+      size_t element_sz = CalcSize(get_element_act->ty);
+      code_lines.push_back("slli t1, t1, " + std::to_string(std::countr_zero(element_sz)));
+      code_lines.push_back("add t2, t0, t1");
+      GenerateWriteAccess(get_element_act->result_full, element_sz, "t2", layout, code_lines);
+    } else if (get_element_act->indices.size() == 2) {
+      // struct access
+      if (get_element_act->indices[0] != "0") {
+        throw std::runtime_error("struct access with non-zero offset is not supported");
+      }
+      size_t element_idx = std::stoull(get_element_act->indices[1]);
+      auto class_ty = std::get<LLVMIRCLASSTYPE>(get_element_act->ty);
+      const IRClassInfo &class_info = low_level_class_info.at(class_ty.class_name_full);
+      size_t offset = class_info.member_var_pos_after_align[element_idx];
+      IRVar2RISCVReg(get_element_act->ptr_full, 4, "t0", layout, code_lines);
+      code_lines.push_back("addi t2, t0, " + std::to_string(offset));
+      GenerateWriteAccess(get_element_act->result_full, 4, "t2", layout, code_lines);
+    } else {
+      throw std::runtime_error("Unknown getelementptr indices size");
+    }
   } else if (auto icmp_act = std::dynamic_pointer_cast<ICMPAction>(act)) {
     size_t sz = CalcSize(icmp_act->type);
     IRVar2RISCVReg(icmp_act->operand1_full, sz, "t0", layout, code_lines);
@@ -124,11 +149,33 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
     if (!process_phi) {
       return;  // for efficiency, phi actions are implemented as store action in the previous block
     }
-    // TODO: implement this
-    // throw std::runtime_error("not implemented");
+    std::string self_label = NaiveBackend::cur_block_label_for_phi;
+    for (const auto &[val, label] : phi_act->values) {
+      if (label == self_label) {
+        size_t sz = CalcSize(phi_act->ty);
+        IRVar2RISCVReg(val, sz, "t0", layout, code_lines);
+        GenerateWriteAccess(phi_act->result_full, sz, "t0", layout, code_lines);
+        return;
+      }
+    }
+    throw std::runtime_error("cannot found label for phi action");
   } else if (auto select_act = std::dynamic_pointer_cast<SelectItem>(act)) {
-    // TODO: implement this
-    // throw std::runtime_error("not implemented");
+    LLVMType ty_int32 = LLVMIRIntType(32);
+    LLVMType ty_ptr = LLVMIRPTRType();
+    if (select_act->ty != ty_int32 && select_act->ty != ty_ptr) {
+      throw std::runtime_error("select action only support int32 or ptr");
+    }
+    IRVar2RISCVReg(select_act->cond_full, 1, "t0", layout, code_lines);
+    IRVar2RISCVReg(select_act->true_val_full, 4, "t1", layout, code_lines);
+    IRVar2RISCVReg(select_act->false_val_full, 4, "t2", layout, code_lines);
+    // use binary operation to implement select for efficiency
+    code_lines.push_back("slli t0, t0, 31");
+    code_lines.push_back("srai t0, t0, 31");
+    code_lines.push_back("and t1, t0, t1");
+    code_lines.push_back("not t0, t0");
+    code_lines.push_back("and t2, t0, t2");
+    code_lines.push_back("or t0, t1, t2");
+    GenerateWriteAccess(select_act->result_full, 4, "t0", layout, code_lines);
   } else {
     throw std::runtime_error("Unknown action type");
   }

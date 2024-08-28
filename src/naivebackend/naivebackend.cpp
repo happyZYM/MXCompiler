@@ -3,6 +3,9 @@
 #include "IR/IR_basic.h"
 #include "build_layout.hpp"
 #include "codegen.hpp"
+namespace NaiveBackend {
+std::string cur_block_label_for_phi;
+}
 using namespace NaiveBackend;
 void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
   auto riscv = std::make_shared<RISCVProgItem>();
@@ -60,6 +63,7 @@ void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
                                   prog->low_level_class_info);
       }
       if (func_def->init_block->exit_action->corresponding_phi) {
+        NaiveBackend::cur_block_label_for_phi = func_def->init_block->label_full;
         NaiveBackend::GenerateASM(func_def->init_block->exit_action->corresponding_phi, func_asm->code_lines,
                                   func_layouts[func_def->func_name_raw], prog->low_level_class_info, true);
       }
@@ -73,6 +77,7 @@ void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
                                   prog->low_level_class_info);
       }
       if (block->exit_action->corresponding_phi) {
+        NaiveBackend::cur_block_label_for_phi = block->label_full;
         NaiveBackend::GenerateASM(block->exit_action->corresponding_phi, func_asm->code_lines,
                                   func_layouts[func_def->func_name_raw], prog->low_level_class_info, true);
       }

@@ -108,11 +108,17 @@ class LLVMIRIntType {
   size_t bits;
   LLVMIRIntType() = default;
   LLVMIRIntType(size_t bits) : bits(bits) {}
+  bool operator==(const LLVMIRIntType &r) const { return bits == r.bits; }
 };
-struct LLVMIRPTRType {};
-struct LLVMVOIDType {};
+struct LLVMIRPTRType {
+  bool operator==(const LLVMIRPTRType &r) const { return true; }
+};
+struct LLVMVOIDType {
+  bool operator==(const LLVMVOIDType &r) const { return true; }
+};
 struct LLVMIRCLASSTYPE {
   std::string class_name_full;
+  bool operator==(const LLVMIRCLASSTYPE &r) const { return class_name_full == r.class_name_full; }
 };
 using LLVMType = std::variant<LLVMIRIntType, LLVMIRPTRType, LLVMVOIDType, LLVMIRCLASSTYPE>;
 class IRClassInfo {
