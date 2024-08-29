@@ -32,6 +32,8 @@ class RISCVConstStrItem : public RISCVAsmItemBase {
         os << "\\t";
       } else if (c == '\"') {
         os << "\\\"";
+      } else if (c == '\\') {
+        os << "\\\\";
       } else {
         os << c;
       }

@@ -32,7 +32,7 @@ inline void ScanForVar(FuncLayout &layout, std::shared_ptr<ActionItem> action,
       throw std::runtime_error("GetElementPtrAction should have a result_full");
     }
     if (get_element_act->indices.size() == 1) {
-      layout.AllocateItem(get_element_act->result_full, CalcSize(get_element_act->ty));
+      layout.AllocateItem(get_element_act->result_full, 4);
     } else if (get_element_act->indices.size() == 2) {
       if (get_element_act->indices[0] != "0")
         throw std::runtime_error("GetElementPtrAction with non-zero base index is not supported");

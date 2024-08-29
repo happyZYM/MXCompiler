@@ -47,11 +47,11 @@ void IRBuilder::ActuralVisit(FuncDef_ASTNode *node) {
   size_t block_id = block_counter++;
   current_block->label_full = "label_" + std::to_string(block_id);
 
-  if (node->func_name == "main") {
+  if (declare->func_name_raw == "main") {
     func_def->init_block = main_init_block;
   } else {
     func_def->init_block = std::make_shared<BlockItem>();
-    func_def->init_block->label_full = "label_init_" + node->func_name;
+    func_def->init_block->label_full = "label_init_" + declare->func_name_raw;
     for (auto &arg : node->params) {
       std::string &arg_name_raw = arg.first;
       std::string rvalue_full_name = "%.var.local." + std::to_string(scope_id) + "." + arg_name_raw + ".val";

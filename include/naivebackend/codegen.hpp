@@ -88,7 +88,7 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
       size_t element_sz = CalcSize(get_element_act->ty);
       code_lines.push_back("slli t1, t1, " + std::to_string(std::countr_zero(element_sz)));
       code_lines.push_back("add t2, t0, t1");
-      GenerateWriteAccess(get_element_act->result_full, element_sz, "t2", layout, code_lines);
+      GenerateWriteAccess(get_element_act->result_full, 4, "t2", layout, code_lines);
     } else if (get_element_act->indices.size() == 2) {
       // struct access
       if (get_element_act->indices[0] != "0") {
@@ -138,6 +138,8 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
     if (call_act->args_ty.size() != call_act->args_val_full.size()) {
       throw std::runtime_error("args_ty and args_full_name should have the same size");
     }
+    code_lines.push_back("addi sp, sp, -16");
+    code_lines.push_back("sw a0, 0(sp)");
     for (size_t i = 0; i < num_of_args && i < 8; i++) {
       IRVar2RISCVReg(call_act->args_val_full[i], CalcSize(call_act->args_ty[i]), "a" + std::to_string(i), layout,
                      code_lines);
@@ -160,6 +162,8 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
       size_t ret_sz = CalcSize(call_act->return_type);
       GenerateWriteAccess(call_act->result_full, ret_sz, "a0", layout, code_lines);
     }
+    code_lines.push_back("lw a0, 0(sp)");
+    code_lines.push_back("addi sp, sp, 16");
   } else if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(act)) {
     if (!process_phi) {
       return;  // for efficiency, phi actions are implemented as store action in the previous block
