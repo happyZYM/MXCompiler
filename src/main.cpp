@@ -12,6 +12,11 @@ int main(int argc, char **argv) {
 
   program.add_argument("-o", "--output").help("output file path").nargs(1).required();
 
+  program.add_argument("--naive-IR")
+    .help("output unoptimized LLVM IR code")
+    .default_value(false)
+    .implicit_value(true);
+
   try {
     program.parse_args(argc, argv);
   } catch (const std::runtime_error &err) {
@@ -22,13 +27,21 @@ int main(int argc, char **argv) {
 
   auto input_file = program.get<std::string>("input");
   auto output_file = program.get<std::string>("output");
+  bool output_naive_ir = program.get<bool>("--naive-IR");
+
   std::ifstream fin(input_file);
   std::ofstream fout(output_file);
   std::shared_ptr<Program_ASTNode> ast;
+
   try {
     SemanticCheck(fin, ast);
     auto IR = BuildIR(ast);
-    // IR->RecursivePrint(fout); return 0;
+
+    if (output_naive_ir) {
+      IR->RecursivePrint(fout);
+      return 0;
+    }
+
     IR->RecursivePrint(std::cerr);
     GenerateNaiveASM(fout, IR);
   } catch (const SemanticError &err) {

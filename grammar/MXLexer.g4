@@ -76,5 +76,5 @@ fragment ESC : '\\n'| '\\"' | '\\\\';
 
 // Whitespace and comments
 WS: [ \t\r\n]+ -> skip;
-LINE_COMMENT : '//' .*? '\r'? ('\n'|EOF) -> skip;
+LINE_COMMENT : '//' .*? ('\r\n'|'\r'|'\n'|EOF) -> skip;
 BLOCK_COMMENT: '/*' .*? '*/'       -> skip;
