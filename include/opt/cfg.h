@@ -11,6 +11,7 @@ class CFGNodeType {
   std::vector<CFGNodeType *> successors, predecessors;
   BlockItem *corresponding_block;
   CFGNodeCollection dom;
+  bool visited;
   CFGNodeType *idom;
   std::vector<CFGNodeType *> successors_in_dom_tree;
   CFGNodeCollection dom_frontier;
@@ -27,5 +28,6 @@ class CFGType {
 CFGNodeCollection GetCFGNodeCollectionsIntersection(const CFGNodeCollection &a, const CFGNodeCollection &b);
 CFGNodeCollection GetCFGNodeCollectionsUnion(const CFGNodeCollection &a, const CFGNodeCollection &b);
 CFGNodeCollection GetCFGNodeCollectionsDifference(const CFGNodeCollection &a, const CFGNodeCollection &b);
+bool CFGNodeCollectionIsSame(const CFGNodeCollection &a, const CFGNodeCollection &b);
 
 CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);
