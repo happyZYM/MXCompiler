@@ -4,6 +4,7 @@
 #include "IR/IR.h"
 #include "naivebackend/naivebackend.h"
 #include "semantic/semantic.h"
+#include "opt/opt.h"
 
 int main(int argc, char **argv) {
   argparse::ArgumentParser program("zmxcc");
@@ -12,10 +13,9 @@ int main(int argc, char **argv) {
 
   program.add_argument("-o", "--output").help("output file path").nargs(1).required();
 
-  program.add_argument("--naive-IR")
-    .help("output unoptimized LLVM IR code")
-    .default_value(false)
-    .implicit_value(true);
+  program.add_argument("--naive-IR").help("output unoptimized LLVM IR code").default_value(false).implicit_value(true);
+
+  program.add_argument("--optimize-all").help("enable all optimizations").default_value(false).implicit_value(true);
 
   try {
     program.parse_args(argc, argv);
@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
   auto input_file = program.get<std::string>("input");
   auto output_file = program.get<std::string>("output");
   bool output_naive_ir = program.get<bool>("--naive-IR");
+  bool optimize_all = program.get<bool>("--optimize-all");
 
   std::ifstream fin(input_file);
   std::ofstream fout(output_file);
@@ -41,9 +42,12 @@ int main(int argc, char **argv) {
       IR->RecursivePrint(fout);
       return 0;
     }
-
-    IR->RecursivePrint(std::cerr);
-    GenerateNaiveASM(fout, IR);
+    if (!optimize_all) {
+      GenerateNaiveASM(fout, IR);
+    } else {
+      auto IR_with_out_allocas = Mem2Reg(IR);
+      IR_with_out_allocas->RecursivePrint(fout);
+    }
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;
     return err.GetErrorCode();

@@ -84,6 +84,7 @@ class BRAction : public JMPActionItem {
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
                                         bool process_phi);
+  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
   std::string cond;
   std::string true_label_full;
   std::string false_label_full;
@@ -102,6 +103,7 @@ class UNConditionJMPAction : public JMPActionItem {
                                         NaiveBackend::FuncLayout &layout,
                                         const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
                                         bool process_phi);
+  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
   std::string label_full;
 
  public:
@@ -308,6 +310,7 @@ class BlockItem : public LLVMIRItemBase {
   friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
   friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
   std::string label_full;
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
@@ -447,6 +450,7 @@ class SelectItem : public ActionItem {
 class FunctionDefItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
+  friend class CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);
   LLVMType return_type;
   std::string func_name_raw;
   std::vector<LLVMType> args;
@@ -566,6 +570,7 @@ class ModuleItem : public LLVMIRItemBase {
   friend class IRBuilder;
   friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
   friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
+  friend std::shared_ptr<ModuleItem> Mem2Reg(std::shared_ptr<ModuleItem> src);
   std::vector<std::shared_ptr<ConstStrItem>> const_strs;
   std::vector<std::shared_ptr<FunctionDeclareItem>> function_declares;
   std::vector<std::shared_ptr<TypeDefItem>> type_defs;
