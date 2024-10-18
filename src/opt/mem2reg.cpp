@@ -92,92 +92,95 @@ void BuildDomForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFG
   }
 }
 
-size_t InNodeReplace(CFGNodeType *cur_node, std::string origin_var_name, size_t &cur_version,
-                     std::stack<std::string> &name_stk) {
-  size_t versions_pushed = 0;
+std::unordered_map<std::string, size_t> InNodeReplace(
+    CFGNodeType *cur_node, std::unordered_map<std::string, size_t> &var_to_version,
+    std::unordered_map<std::string, std::stack<std::string>> &var_to_name_stk) {
+  std::unordered_map<std::string, size_t> var_to_versions_pushed;
   BlockItem *cur_block = cur_node->corresponding_block;
   std::vector<std::shared_ptr<ActionItem>> new_actions;
-  std::unordered_set<std::string> is_an_alias_generated_by_load;
-  if (cur_block->phi_map.find(origin_var_name) != cur_block->phi_map.end()) {
-    name_stk.push(cur_block->phi_map[origin_var_name]->result_full);
-    versions_pushed++;
+  std::unordered_map<std::string, std::string> is_an_alias_generated_by_load;
+  for (auto [origin_var_name, _] : var_to_version) {
+    if (cur_block->phi_map.find(origin_var_name) != cur_block->phi_map.end()) {
+      var_to_name_stk[origin_var_name].push(cur_block->phi_map[origin_var_name]->result_full);
+      var_to_versions_pushed[origin_var_name]++;
+    }
   }
   for (auto act : cur_block->actions) {
     if (std::dynamic_pointer_cast<JMPActionItem>(act))
       throw std::runtime_error("JMPActionItem should not appear in actions");
     if (auto alloca_act = std::dynamic_pointer_cast<AllocaAction>(act)) {
-      if (alloca_act->name_full == origin_var_name) {
+      if (var_to_version.find(alloca_act->name_full) != var_to_version.end()) {
         // do nothing, just erase it
       } else {
         new_actions.push_back(alloca_act);
       }
     } else if (auto bin_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
       if (is_an_alias_generated_by_load.find(bin_act->operand1_full) != is_an_alias_generated_by_load.end()) {
-        bin_act->operand1_full = name_stk.top();
+        bin_act->operand1_full = is_an_alias_generated_by_load[bin_act->operand1_full];
       }
       if (is_an_alias_generated_by_load.find(bin_act->operand2_full) != is_an_alias_generated_by_load.end()) {
-        bin_act->operand2_full = name_stk.top();
+        bin_act->operand2_full = is_an_alias_generated_by_load[bin_act->operand2_full];
       }
       new_actions.push_back(bin_act);
     } else if (auto load_act = std::dynamic_pointer_cast<LoadAction>(act)) {
-      if (load_act->ptr_full == origin_var_name) {
+      if (var_to_version.find(load_act->ptr_full) != var_to_version.end()) {
         // remove it
-        is_an_alias_generated_by_load.insert(load_act->result_full);
+        is_an_alias_generated_by_load[load_act->result_full] = var_to_name_stk[load_act->ptr_full].top();
       } else {
         new_actions.push_back(load_act);
       }
     } else if (auto store_act = std::dynamic_pointer_cast<StoreAction>(act)) {
       if (is_an_alias_generated_by_load.find(store_act->value_full) != is_an_alias_generated_by_load.end()) {
-        store_act->value_full = name_stk.top();
+        store_act->value_full = is_an_alias_generated_by_load[store_act->value_full];
       }
-      if (store_act->ptr_full == origin_var_name) {
+      if (var_to_version.find(store_act->ptr_full) != var_to_version.end()) {
         // remove it
-        name_stk.push(store_act->value_full);
-        versions_pushed++;
+        var_to_name_stk[store_act->ptr_full].push(store_act->value_full);
+        var_to_versions_pushed[store_act->ptr_full]++;
       } else {
         new_actions.push_back(store_act);
       }
     } else if (auto get_act = std::dynamic_pointer_cast<GetElementPtrAction>(act)) {
       new_actions.push_back(get_act);
       if (is_an_alias_generated_by_load.find(get_act->ptr_full) != is_an_alias_generated_by_load.end()) {
-        get_act->ptr_full = name_stk.top();
+        get_act->ptr_full = is_an_alias_generated_by_load[get_act->ptr_full];
       }
       for (auto &idx : get_act->indices) {
         if (is_an_alias_generated_by_load.find(idx) != is_an_alias_generated_by_load.end()) {
-          idx = name_stk.top();
+          idx = is_an_alias_generated_by_load[idx];
         }
       }
     } else if (auto icmp_act = std::dynamic_pointer_cast<ICMPAction>(act)) {
       if (is_an_alias_generated_by_load.find(icmp_act->operand1_full) != is_an_alias_generated_by_load.end()) {
-        icmp_act->operand1_full = name_stk.top();
+        icmp_act->operand1_full = is_an_alias_generated_by_load[icmp_act->operand1_full];
       }
       if (is_an_alias_generated_by_load.find(icmp_act->operand2_full) != is_an_alias_generated_by_load.end()) {
-        icmp_act->operand2_full = name_stk.top();
+        icmp_act->operand2_full = is_an_alias_generated_by_load[icmp_act->operand2_full];
       }
       new_actions.push_back(icmp_act);
     } else if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(act)) {
       new_actions.push_back(phi_act);
       for (auto &val : phi_act->values) {
         if (is_an_alias_generated_by_load.find(val.first) != is_an_alias_generated_by_load.end()) {
-          val.first = name_stk.top();
+          val.first = is_an_alias_generated_by_load[val.first];
         }
       }
     } else if (auto call_act = std::dynamic_pointer_cast<CallItem>(act)) {
       for (size_t i = 0; i < call_act->args_val_full.size(); i++) {
         if (is_an_alias_generated_by_load.find(call_act->args_val_full[i]) != is_an_alias_generated_by_load.end()) {
-          call_act->args_val_full[i] = name_stk.top();
+          call_act->args_val_full[i] = is_an_alias_generated_by_load[call_act->args_val_full[i]];
         }
       }
       new_actions.push_back(call_act);
     } else if (auto select_act = std::dynamic_pointer_cast<SelectItem>(act)) {
       if (is_an_alias_generated_by_load.find(select_act->cond_full) != is_an_alias_generated_by_load.end()) {
-        select_act->cond_full = name_stk.top();
+        select_act->cond_full = is_an_alias_generated_by_load[select_act->cond_full];
       }
       if (is_an_alias_generated_by_load.find(select_act->true_val_full) != is_an_alias_generated_by_load.end()) {
-        select_act->true_val_full = name_stk.top();
+        select_act->true_val_full = is_an_alias_generated_by_load[select_act->true_val_full];
       }
       if (is_an_alias_generated_by_load.find(select_act->false_val_full) != is_an_alias_generated_by_load.end()) {
-        select_act->false_val_full = name_stk.top();
+        select_act->false_val_full = is_an_alias_generated_by_load[select_act->false_val_full];
       }
       new_actions.push_back(select_act);
     } else {
@@ -186,36 +189,41 @@ size_t InNodeReplace(CFGNodeType *cur_node, std::string origin_var_name, size_t 
   }
   if (auto br_act = std::dynamic_pointer_cast<BRAction>(cur_block->exit_action)) {
     if (is_an_alias_generated_by_load.find(br_act->cond) != is_an_alias_generated_by_load.end()) {
-      br_act->cond = name_stk.top();
+      br_act->cond = is_an_alias_generated_by_load[br_act->cond];
     }
   } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(cur_block->exit_action)) {
     if (is_an_alias_generated_by_load.find(ret_act->value) != is_an_alias_generated_by_load.end()) {
-      ret_act->value = name_stk.top();
+      ret_act->value = is_an_alias_generated_by_load[ret_act->value];
     }
   }
   cur_block->actions = new_actions;
-  return versions_pushed;
+  return var_to_versions_pushed;
 }
-void DFSReplace(CFGNodeType *cur_node, std::string origin_var_name, size_t &cur_version,
-                std::stack<std::string> &name_stk) {
+void DFSReplace(CFGNodeType *cur_node, std::unordered_map<std::string, size_t> &var_to_version,
+                std::unordered_map<std::string, std::stack<std::string>> &var_to_name_stk) {
   // std::cerr << "DFSReplace: " << cur_node->corresponding_block->label_full << std::endl;
-  size_t versions_pushed = 0;
+  std::unordered_map<std::string, size_t> var_to_version_pushed;
   // step 1: process current node
-  versions_pushed = InNodeReplace(cur_node, origin_var_name, cur_version, name_stk);
+  var_to_version_pushed = InNodeReplace(cur_node, var_to_version, var_to_name_stk);
   // step 2: process the phi commands in the successors in cfg
-  for (auto succ : cur_node->successors) {
-    if (succ->corresponding_block->phi_map.find(origin_var_name) != succ->corresponding_block->phi_map.end()) {
-      auto phi = succ->corresponding_block->phi_map[origin_var_name];
-      phi->values.push_back(std::make_pair(name_stk.top(), cur_node->corresponding_block->label_full));
+  for (auto [origin_var_name, _] : var_to_version) {
+    for (auto succ : cur_node->successors) {
+      if (succ->corresponding_block->phi_map.find(origin_var_name) != succ->corresponding_block->phi_map.end()) {
+        auto phi = succ->corresponding_block->phi_map[origin_var_name];
+        phi->values.push_back(
+            std::make_pair(var_to_name_stk[origin_var_name].top(), cur_node->corresponding_block->label_full));
+      }
     }
   }
   // step 3: process the successors in dom tree
   for (auto succ : cur_node->successors_in_dom_tree) {
-    DFSReplace(succ, origin_var_name, cur_version, name_stk);
+    DFSReplace(succ, var_to_version, var_to_name_stk);
   }
   // step 4: restore the stack
-  for (size_t i = 0; i < versions_pushed; i++) {
-    name_stk.pop();
+  for (auto [var, version_pushed] : var_to_version_pushed) {
+    for (size_t i = 0; i < version_pushed; i++) {
+      var_to_name_stk[var].pop();
+    }
   }
 }
 void ConductMem2RegForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFGType &cfg) {
@@ -232,23 +240,27 @@ void ConductMem2RegForFunction(const std::shared_ptr<FunctionDefItem> &func, con
       }
     }
   }
-  std::unordered_map<std::string, std::vector<CFGNodeType *>> var_to_def_sites;
+  std::unordered_map<std::string, std::unordered_set<CFGNodeType *>> var_to_def_sites;
   for (auto node : cfg.nodes) {
     for (auto act : node->corresponding_block->actions) {
       if (auto store_act = std::dynamic_pointer_cast<StoreAction>(act)) {
         if (var_to_version.find(store_act->ptr_full) != var_to_version.end()) {
-          var_to_def_sites[store_act->ptr_full].push_back(node.get());
-          break;
+          var_to_def_sites[store_act->ptr_full].insert(node.get());
+          // break;
         }
       }
     }
   }
   for (const auto &var : all_local_vars) {
+    // std::cerr << "now consider var: " << var << std::endl;
     size_t &cur_version = var_to_version[var];
     std::queue<CFGNodeType *> Q;
+    // std::cerr << "\tdef sites:";
     for (auto def_site : var_to_def_sites[var]) {
       Q.push(def_site);
+      // std::cerr << ' ' << def_site->corresponding_block->label_full;
     }
+    // std::cerr << std::endl;
     while (Q.size() > 0) {
       CFGNodeType *cur_node = Q.front();
       Q.pop();
@@ -262,13 +274,16 @@ void ConductMem2RegForFunction(const std::shared_ptr<FunctionDefItem> &func, con
       }
     }
   }
+  std::unordered_map<std::string, std::stack<std::string>> var_to_name_stk;
   for (const auto &var : all_local_vars) {
-    size_t &cur_version = var_to_version[var];
-    std::stack<std::string> name_stk;
-    name_stk.push("0");
-    // std::cerr << "processing " << var << std::endl;
-    DFSReplace(cfg.entry, var, cur_version, name_stk);
+    var_to_name_stk[var] = std::stack<std::string>();
+    if (std::holds_alternative<LLVMIRPTRType>(var_to_type[var])) {
+      var_to_name_stk[var].push("null");
+    } else {
+      var_to_name_stk[var].push("0");
+    }
   }
+  DFSReplace(cfg.entry, var_to_version, var_to_name_stk);
 }
 std::shared_ptr<ModuleItem> Mem2Reg(std::shared_ptr<ModuleItem> src) {
   // auto res = std::make_shared<ModuleItem>(*src);
