@@ -78,18 +78,11 @@ void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code
                  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info, bool process_phi);
 }  // namespace NaiveBackend
 class BRAction : public JMPActionItem {
-  friend class IRBuilder;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
-  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
+ public:
   std::string cond;
   std::string true_label_full;
   std::string false_label_full;
 
- public:
   BRAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << "br i1 " << cond << ", label %" << true_label_full << ", label %" << false_label_full << "\n";
@@ -111,17 +104,10 @@ class UNConditionJMPAction : public JMPActionItem {
   void RecursivePrint(std::ostream &os) const { os << "br label %" << label_full << "\n"; }
 };
 class RETAction : public JMPActionItem {
-  friend class IRBuilder;
-  friend class FunctionDefItem;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   LLVMType type;
   std::string value;
 
- public:
   RETAction() = default;
   void RecursivePrint(std::ostream &os) const {
     if (std::holds_alternative<LLVMVOIDType>(type)) {
@@ -137,20 +123,13 @@ class RETAction : public JMPActionItem {
 };
 
 class BinaryOperationAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string op;
   std::string operand1_full;
   std::string operand2_full;
   std::string result_full;
   LLVMType type;
 
- public:
   BinaryOperationAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = " << op << " ";
@@ -167,14 +146,11 @@ class BinaryOperationAction : public ActionItem {
   }
 };
 class AllocaAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
+ public:
   std::string name_full;
   LLVMType type;
   size_t num;
 
- public:
   AllocaAction() : num(1){};
   void RecursivePrint(std::ostream &os) const {
     os << name_full << " = alloca ";
@@ -192,18 +168,11 @@ class AllocaAction : public ActionItem {
   }
 };
 class LoadAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
 
- public:
   LoadAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = load ";
@@ -218,18 +187,11 @@ class LoadAction : public ActionItem {
   }
 };
 class StoreAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   LLVMType ty;
   std::string value_full;
   std::string ptr_full;
 
- public:
   StoreAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << "store ";
@@ -244,19 +206,12 @@ class StoreAction : public ActionItem {
   }
 };
 class GetElementPtrAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string result_full;
   LLVMType ty;
   std::string ptr_full;
   std::vector<std::string> indices;
 
- public:
   GetElementPtrAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = getelementptr ";
@@ -277,20 +232,13 @@ class GetElementPtrAction : public ActionItem {
   }
 };
 class ICMPAction : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string op;
   std::string operand1_full;
   std::string operand2_full;
   std::string result_full;
   LLVMType type;
 
- public:
   ICMPAction() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = icmp " << op << " ";
@@ -305,20 +253,18 @@ class ICMPAction : public ActionItem {
   }
 };
 class BlockItem : public LLVMIRItemBase {
-  friend class IRBuilder;
-  friend class FunctionDefItem;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
+ public:
   std::string label_full;
+  std::unordered_map<std::string, std::shared_ptr<PhiItem>> phi_map;  // this is used to store phi items when optimizing
   std::vector<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
 
- public:
   BlockItem() = default;
   void RecursivePrint(std::ostream &os) const {
     os << label_full << ":\n";
+    for (auto &kv : phi_map) {
+      std::static_pointer_cast<ActionItem>(kv.second)->RecursivePrint(os);
+    }
     for (auto &action : actions) {
       action->RecursivePrint(os);
     }
@@ -326,20 +272,13 @@ class BlockItem : public LLVMIRItemBase {
   }
 };
 class CallItem : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string result_full;
   LLVMType return_type;
   std::string func_name_raw;
   std::vector<LLVMType> args_ty;
   std::vector<std::string> args_val_full;
 
- public:
   CallItem() = default;
   void RecursivePrint(std::ostream &os) const {
     if (std::holds_alternative<LLVMVOIDType>(return_type)) {
@@ -380,17 +319,10 @@ class CallItem : public ActionItem {
 };
 
 class PhiItem : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string result_full;
   LLVMType ty;
   std::vector<std::pair<std::string, std::string>> values;  // (val_i_full, label_i_full)
- public:
   PhiItem() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = phi ";
@@ -412,20 +344,13 @@ class PhiItem : public ActionItem {
   }
 };
 class SelectItem : public ActionItem {
-  friend class IRBuilder;
-  friend void NaiveBackend::ScanForVar(class NaiveBackend::FuncLayout &layout, std::shared_ptr<ActionItem> action,
-                                       const std::unordered_map<std::string, IRClassInfo> &low_level_class_info);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::string result_full;
   std::string cond_full;
   std::string true_val_full;
   std::string false_val_full;
   LLVMType ty;
 
- public:
   SelectItem() = default;
   void RecursivePrint(std::ostream &os) const {
     os << result_full << " = select i1 " << cond_full << ", ";

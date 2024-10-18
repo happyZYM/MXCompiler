@@ -86,14 +86,17 @@ bool CFGNodeCollectionIsSame(const CFGNodeCollection &a, const CFGNodeCollection
 
 CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func) {
   CFGType res;
+  auto init_block=func->init_block;
   if (!func->init_block) {
-    throw std::runtime_error("Function does not have an init block");
+    // throw std::runtime_error("Function does not have an init block");
+    if(func->basic_blocks.size()==0) throw std::runtime_error("Function does not have any block");
+    init_block = func->basic_blocks[0];
   }
-  res.label_to_block[func->init_block->label_full] = func->init_block.get();
+  res.label_to_block[init_block->label_full] = init_block.get();
   res.nodes.push_back(std::make_shared<CFGNodeType>());
   res.entry = res.nodes.back().get();
-  res.entry->corresponding_block = func->init_block.get();
-  res.block_to_node[func->init_block.get()] = res.entry;
+  res.entry->corresponding_block = init_block.get();
+  res.block_to_node[init_block.get()] = res.entry;
   for (auto block_ptr : func->basic_blocks) {
     res.label_to_block[block_ptr->label_full] = block_ptr.get();
     res.nodes.push_back(std::make_shared<CFGNodeType>());

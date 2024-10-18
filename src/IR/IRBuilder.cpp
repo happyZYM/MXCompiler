@@ -430,7 +430,7 @@ void IRBuilder::ActuralVisit(NewArrayExpr_ASTNode *node) {
   }
 
   auto dim_info = std::make_shared<AllocaAction>();
-  std::string dim_info_var = "%.var.local.tmp." + std::to_string(tmp_var_counter++);
+  std::string dim_info_var = "%.var.tmp." + std::to_string(tmp_var_counter++);
   cur_alloca_block->actions.push_back(dim_info);
   dim_info->num = dims_with_size;
   dim_info->name_full = dim_info_var;
