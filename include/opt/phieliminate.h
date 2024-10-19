@@ -8,11 +8,10 @@ class MoveInstruct : public ActionItem {
   std::string src_full;
   std::string dest_full;
   MoveInstruct() = default;
-  void RecursivePrint(std::ostream &os) const {
+  void RecursivePrint([[maybe_unused]] std::ostream &os) const {
     throw std::runtime_error("Move instruction is not an actual LLVM IR instruction");
   }
 };
 }  // namespace opt
-
 
 std::shared_ptr<ModuleItem> PhiEliminate(std::shared_ptr<ModuleItem> src);

@@ -17,6 +17,11 @@ class CFGNodeType {
   CFGNodeType *idom;
   std::vector<CFGNodeType *> successors_in_dom_tree;
   CFGNodeCollection dom_frontier;
+
+  std::vector<size_t> in_active_vars;
+  std::vector<size_t> out_active_vars;
+  std::vector<size_t> use_vars;
+  std::vector<size_t> def_vars;
 };
 
 class CFGType {
@@ -27,9 +32,100 @@ class CFGType {
   std::unordered_map<std::string, BlockItem *> label_to_block;
 };
 
-CFGNodeCollection GetCFGNodeCollectionsIntersection(const CFGNodeCollection &a, const CFGNodeCollection &b);
-CFGNodeCollection GetCFGNodeCollectionsUnion(const CFGNodeCollection &a, const CFGNodeCollection &b);
-CFGNodeCollection GetCFGNodeCollectionsDifference(const CFGNodeCollection &a, const CFGNodeCollection &b);
-bool CFGNodeCollectionIsSame(const CFGNodeCollection &a, const CFGNodeCollection &b);
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+Container GetCollectionsIntersection(const Container &a, const Container &b, Compare comp = Compare()) {
+  Container result;
+  auto ita = a.begin();
+  auto itb = b.begin();
+
+  while (ita != a.end() && itb != b.end()) {
+    if (comp(*ita, *itb)) {
+      ++ita;
+    } else if (comp(*itb, *ita)) {
+      ++itb;
+    } else {
+      result.push_back(*ita);
+      ++ita;
+      ++itb;
+    }
+  }
+
+  return result;
+}
+
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+Container GetCollectionsUnion(const Container &a, const Container &b, Compare comp = Compare()) {
+  Container result;
+  auto ita = a.begin();
+  auto itb = b.begin();
+
+  while (ita != a.end() && itb != b.end()) {
+    if (comp(*ita, *itb)) {
+      result.push_back(*ita);
+      ++ita;
+    } else if (comp(*itb, *ita)) {
+      result.push_back(*itb);
+      ++itb;
+    } else {
+      result.push_back(*ita);
+      ++ita;
+      ++itb;
+    }
+  }
+
+  while (ita != a.end()) {
+    result.push_back(*ita);
+    ++ita;
+  }
+
+  while (itb != b.end()) {
+    result.push_back(*itb);
+    ++itb;
+  }
+
+  return result;
+}
+
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+Container GetCollectionsDifference(const Container &a, const Container &b, Compare comp = Compare()) {
+  Container result;
+  auto ita = a.begin();
+  auto itb = b.begin();
+
+  while (ita != a.end() && itb != b.end()) {
+    if (comp(*ita, *itb)) {
+      result.push_back(*ita);
+      ++ita;
+    } else if (comp(*itb, *ita)) {
+      ++itb;
+    } else {
+      ++ita;
+      ++itb;
+    }
+  }
+
+  while (ita != a.end()) {
+    result.push_back(*ita);
+    ++ita;
+  }
+
+  return result;
+}
+
+template <typename Container, typename Compare = std::less<typename Container::value_type>>
+bool GetCollectionsIsSame(const Container &a, const Container &b, Compare comp = Compare()) {
+  auto ita = a.begin();
+  auto itb = b.begin();
+
+  while (ita != a.end() && itb != b.end()) {
+    if (comp(*ita, *itb) || comp(*itb, *ita)) {
+      return false;
+    }
+    ++ita;
+    ++itb;
+  }
+
+  return ita == a.end() && itb == b.end();
+}
 
 CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);

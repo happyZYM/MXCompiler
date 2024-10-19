@@ -1,95 +1,12 @@
 #include "cfg.h"
 #include <string>
-CFGNodeCollection GetCFGNodeCollectionsIntersection(const CFGNodeCollection &a, const CFGNodeCollection &b) {
-  // assume that thety are both sorted
-  CFGNodeCollection res;
-  auto ita = a.begin();
-  auto itb = b.begin();
-  while (ita != a.end() && itb != b.end()) {
-    if (*ita == *itb) {
-      res.push_back(*ita);
-      ita++;
-      itb++;
-    } else if (*ita < *itb) {
-      ita++;
-    } else {
-      itb++;
-    }
-  }
-  return res;
-}
-
-CFGNodeCollection GetCFGNodeCollectionsUnion(const CFGNodeCollection &a, const CFGNodeCollection &b) {
-  // assume that thety are both sorted
-  CFGNodeCollection res;
-  auto ita = a.begin();
-  auto itb = b.begin();
-  while (ita != a.end() && itb != b.end()) {
-    if (*ita == *itb) {
-      res.push_back(*ita);
-      ita++;
-      itb++;
-    } else if (*ita < *itb) {
-      res.push_back(*ita);
-      ita++;
-    } else {
-      res.push_back(*itb);
-      itb++;
-    }
-  }
-  while (ita != a.end()) {
-    res.push_back(*ita);
-    ita++;
-  }
-  while (itb != b.end()) {
-    res.push_back(*itb);
-    itb++;
-  }
-  return res;
-}
-
-CFGNodeCollection GetCFGNodeCollectionsDifference(const CFGNodeCollection &a, const CFGNodeCollection &b) {
-  // assume that thety are both sorted
-  CFGNodeCollection res;
-  auto ita = a.begin();
-  auto itb = b.begin();
-  while (ita != a.end() && itb != b.end()) {
-    if (*ita == *itb) {
-      ita++;
-      itb++;
-    } else if (*ita < *itb) {
-      res.push_back(*ita);
-      ita++;
-    } else {
-      itb++;
-    }
-  }
-  while (ita != a.end()) {
-    res.push_back(*ita);
-    ita++;
-  }
-  return res;
-}
-
-bool CFGNodeCollectionIsSame(const CFGNodeCollection &a, const CFGNodeCollection &b) {
-  auto ita = a.begin();
-  auto itb = b.begin();
-  while (ita != a.end() && itb != b.end()) {
-    if (*ita != *itb) {
-      return false;
-    }
-    ita++;
-    itb++;
-  }
-  return ita == a.end() && itb == b.end();
-}
 
 CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func) {
   CFGType res;
-  auto init_block=func->init_block;
+  auto init_block = func->init_block;
   if (!func->init_block) {
     // throw std::runtime_error("Function does not have an init block");
-    if(func->basic_blocks.size()==0) throw std::runtime_error("Function does not have any block");
+    if (func->basic_blocks.size() == 0) throw std::runtime_error("Function does not have any block");
     init_block = func->basic_blocks[0];
   }
   res.label_to_block[init_block->label_full] = init_block.get();

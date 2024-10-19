@@ -3,8 +3,8 @@
 #include <iostream>
 #include "IR/IR.h"
 #include "naivebackend/naivebackend.h"
-#include "semantic/semantic.h"
 #include "opt/opt.h"
+#include "semantic/semantic.h"
 
 int main(int argc, char **argv) {
   argparse::ArgumentParser program("zmxcc");
@@ -46,8 +46,9 @@ int main(int argc, char **argv) {
       GenerateNaiveASM(fout, IR);
     } else {
       auto IR_with_out_allocas = Mem2Reg(IR);
-      // IR_with_out_allocas->RecursivePrint(fout);
+      IR_with_out_allocas->RecursivePrint(fout);
       auto IR_with_out_phis = PhiEliminate(IR_with_out_allocas);
+      auto alloced_code = RegAlloc(IR_with_out_phis);
     }
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;

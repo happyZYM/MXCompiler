@@ -36,11 +36,11 @@ void BuildDomForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFG
       if (cur->predecessors.size() > 0) {
         CFGNodeCollection tmp = cur->predecessors[0]->dom;
         for (size_t i = 1; i < cur->predecessors.size(); i++) {
-          tmp = GetCFGNodeCollectionsIntersection(tmp, cur->predecessors[i]->dom);
+          tmp = GetCollectionsIntersection(tmp, cur->predecessors[i]->dom);
         }
-        new_dom = GetCFGNodeCollectionsUnion(new_dom, tmp);
+        new_dom = GetCollectionsUnion(new_dom, tmp);
       }
-      if (!CFGNodeCollectionIsSame(new_dom, cur->dom)) {
+      if (!GetCollectionsIsSame(new_dom, cur->dom)) {
         all_dom_unchanged = false;
         cur->dom = new_dom;
       }
@@ -59,10 +59,10 @@ void BuildDomForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFG
   for (auto node : cfg.nodes) {
     CFGNodeCollection is_frontier_of;
     CFGNodeCollection tmp1 = {node.get()};
-    tmp1 = GetCFGNodeCollectionsDifference(node->dom, tmp1);
+    tmp1 = GetCollectionsDifference(node->dom, tmp1);
     for (auto pred : node->predecessors) {
-      CFGNodeCollection tmp2 = GetCFGNodeCollectionsDifference(pred->dom, tmp1);
-      is_frontier_of = GetCFGNodeCollectionsUnion(is_frontier_of, tmp2);
+      CFGNodeCollection tmp2 = GetCollectionsDifference(pred->dom, tmp1);
+      is_frontier_of = GetCollectionsUnion(is_frontier_of, tmp2);
     }
     for (auto frontier_node : is_frontier_of) {
       frontier_node->dom_frontier.push_back(node.get());

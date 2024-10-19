@@ -365,9 +365,7 @@ class SelectItem : public ActionItem {
   }
 };
 class FunctionDefItem : public LLVMIRItemBase {
-  friend class IRBuilder;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend class CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);
+ public:
   LLVMType return_type;
   std::string func_name_raw;
   std::vector<LLVMType> args;
@@ -375,7 +373,6 @@ class FunctionDefItem : public LLVMIRItemBase {
   std::shared_ptr<BlockItem> init_block;
   std::vector<std::shared_ptr<BlockItem>> basic_blocks;
 
- public:
   FunctionDefItem() = default;
   void RecursivePrint(std::ostream &os) const {
     os << "define ";
