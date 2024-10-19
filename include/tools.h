@@ -91,13 +91,13 @@ inline bool operator==(const ExprTypeInfo &l, const ExprTypeInfo &r) {
     return true;
   }
   if (std::holds_alternative<IdentifierType>(l)) {
-    bool x = std::holds_alternative<IdentifierType>(r);
+    // bool x = std::holds_alternative<IdentifierType>(r);
     std::string a = std::get<IdentifierType>(l);
     std::string b = std::get<IdentifierType>(r);
     return std::holds_alternative<IdentifierType>(r) && std::get<IdentifierType>(l) == std::get<IdentifierType>(r);
   }
   if (std::holds_alternative<ArrayType>(l)) {
-    bool x = std::holds_alternative<ArrayType>(r);
+    // bool x = std::holds_alternative<ArrayType>(r);
     return std::holds_alternative<ArrayType>(r) && std::get<ArrayType>(l) == std::get<ArrayType>(r);
   }
   throw std::runtime_error("something strange happened");

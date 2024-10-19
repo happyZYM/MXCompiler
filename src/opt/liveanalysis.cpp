@@ -42,8 +42,8 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
     std::vector<size_t> cur_node_def;
     bool use_def_init = false;
     for (auto act : block->actions) {
-      std::vector<size_t> cur_act_use;
-      std::vector<size_t> cur_act_def;
+      std::vector<size_t> &cur_act_use = node->action_use_vars[act.get()];
+      std::vector<size_t> &cur_act_def = node->action_def_vars[act.get()];
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
         if (var_to_id.find(br_act->cond) != var_to_id.end()) {
           cur_act_use.push_back(var_to_id[br_act->cond]);
@@ -153,27 +153,50 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
         cur_node_use = cur_act_use;
         cur_node_def = cur_act_def;
       } else {
-        auto use_p = std::move(cur_node_use);
-        auto def_p = std::move(cur_node_def);
-        auto use_n = std::move(cur_act_use);
-        auto def_n = std::move(cur_act_def);
+        const auto &use_p = cur_node_use;
+        const auto &def_p = cur_node_def;
+        const auto &use_n = cur_act_use;
+        const auto &def_n = cur_act_def;
         cur_node_use = GetCollectionsUnion(use_p, GetCollectionsDifference(use_n, def_p));
-        cur_node_def = GetCollectionsUnion(def_p, use_n);
+        cur_node_def = GetCollectionsUnion(def_p, def_n);
       }
     }
-    node->use_vars = cur_node_use;
-    node->def_vars = cur_node_def;
+    {
+      auto act = block->exit_action;
+      std::vector<size_t> &cur_act_use = node->action_use_vars[act.get()];
+      std::vector<size_t> &cur_act_def = node->action_def_vars[act.get()];
+      if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
+        if (var_to_id.find(br_act->cond) != var_to_id.end()) {
+          cur_act_use.push_back(var_to_id[br_act->cond]);
+        }
+      } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {
+        if (!std::holds_alternative<LLVMVOIDType>(ret_act->type) && var_to_id.find(ret_act->value) != var_to_id.end()) {
+          cur_act_use.push_back(var_to_id[ret_act->value]);
+        }
+      }
+      if (!use_def_init) {
+        use_def_init = true;
+        cur_node_use = cur_act_use;
+        cur_node_def = cur_act_def;
+      } else {
+        const auto &use_p = cur_node_use;
+        const auto &def_p = cur_node_def;
+        const auto &use_n = cur_act_use;
+        const auto &def_n = cur_act_def;
+        cur_node_use = GetCollectionsUnion(use_p, GetCollectionsDifference(use_n, def_p));
+        cur_node_def = GetCollectionsUnion(def_p, def_n);
+      }
+    }
+    node->block_use_vars = cur_node_use;
+    node->block_def_vars = cur_node_def;
   }
 }
 
-void LiveAnalysis(CFGType &cfg) {
-  std::vector<std::string> id_to_var;
-  std::unordered_map<std::string, size_t> var_to_id;
-  VarCollect(cfg, id_to_var, var_to_id);
-  UseDefCollect(cfg, id_to_var, var_to_id);
+void BlockLevelTracking(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_to_var,
+                        [[maybe_unused]] std::unordered_map<std::string, size_t> &var_to_id) {
   std::vector<CFGNodeType *> exists;
   for (auto node : cfg.nodes) {
-    node->in_active_vars = node->use_vars;
+    node->block_in_active_vars = node->block_use_vars;
     if (node->successors.size() == 0) {
       exists.push_back(node.get());
     }
@@ -200,18 +223,56 @@ void LiveAnalysis(CFGType &cfg) {
       }
       std::vector<size_t> out_active_vars;
       for (auto succ : cur_node->successors) {
-        out_active_vars = GetCollectionsUnion(out_active_vars, succ->in_active_vars);
+        out_active_vars = GetCollectionsUnion(out_active_vars, succ->block_in_active_vars);
       }
-      if (!GetCollectionsIsSame(cur_node->out_active_vars, out_active_vars)) {
+      if (!GetCollectionsIsSame(cur_node->block_out_active_vars, out_active_vars)) {
         all_data_unchanged = false;
-        cur_node->out_active_vars = std::move(out_active_vars);
+        cur_node->block_out_active_vars = std::move(out_active_vars);
       }
-      std::vector<size_t> in_active_vars = GetCollectionsUnion(
-          cur_node->use_vars, GetCollectionsDifference(cur_node->out_active_vars, cur_node->def_vars));
-      if (!GetCollectionsIsSame(cur_node->in_active_vars, in_active_vars)) {
+      std::vector<size_t> in_active_vars =
+          GetCollectionsUnion(cur_node->block_use_vars,
+                              GetCollectionsDifference(cur_node->block_out_active_vars, cur_node->block_def_vars));
+      if (!GetCollectionsIsSame(cur_node->block_in_active_vars, in_active_vars)) {
         all_data_unchanged = false;
-        cur_node->in_active_vars = std::move(in_active_vars);
+        cur_node->block_in_active_vars = std::move(in_active_vars);
       }
     }
   } while (!all_data_unchanged);
+}
+
+void ActionLevelTracking(CFGType &cfg, CFGNodeType *node) {
+  if (node->corresponding_block->actions.size() == 0) {
+    node->action_in_active_vars[node->corresponding_block->exit_action.get()] = node->block_in_active_vars;
+    node->action_out_active_vars[node->corresponding_block->exit_action.get()] = node->block_out_active_vars;
+    return;
+  }
+  node->action_in_active_vars[node->corresponding_block->actions.front().get()] = node->block_in_active_vars;
+  node->action_out_active_vars[node->corresponding_block->exit_action.get()] = node->block_out_active_vars;
+  node->action_in_active_vars[node->corresponding_block->exit_action.get()] = GetCollectionsUnion(
+      node->action_use_vars[node->corresponding_block->exit_action.get()],
+      GetCollectionsDifference(node->action_out_active_vars[node->corresponding_block->exit_action.get()],
+                               node->action_def_vars[node->corresponding_block->exit_action.get()]));
+  node->action_out_active_vars[node->corresponding_block->actions.back().get()] =
+      node->action_in_active_vars[node->corresponding_block->exit_action.get()];
+  if (node->corresponding_block->actions.size() == 1) return;
+  auto it = node->corresponding_block->actions.end();
+  --it;
+  while (true) {
+    node->action_in_active_vars[it->get()] = GetCollectionsUnion(
+        node->action_use_vars[it->get()],
+        GetCollectionsDifference(node->action_out_active_vars[it->get()], node->action_def_vars[it->get()]));
+    auto tmp = node->action_in_active_vars[it->get()];
+    --it;
+    if (it == node->corresponding_block->actions.begin()) break;
+    node->action_out_active_vars[it->get()] = tmp;
+  }
+}
+
+void LiveAnalysis(CFGType &cfg) {
+  VarCollect(cfg, cfg.id_to_var, cfg.var_to_id);
+  UseDefCollect(cfg, cfg.id_to_var, cfg.var_to_id);
+  BlockLevelTracking(cfg, cfg.id_to_var, cfg.var_to_id);
+  for (auto node : cfg.nodes) {
+    ActionLevelTracking(cfg, node.get());
+  }
 }

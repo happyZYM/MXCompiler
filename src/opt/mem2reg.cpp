@@ -97,7 +97,7 @@ std::unordered_map<std::string, size_t> InNodeReplace(
     std::unordered_map<std::string, std::stack<std::string>> &var_to_name_stk) {
   std::unordered_map<std::string, size_t> var_to_versions_pushed;
   BlockItem *cur_block = cur_node->corresponding_block;
-  std::vector<std::shared_ptr<ActionItem>> new_actions;
+  std::list<std::shared_ptr<ActionItem>> new_actions;
   std::unordered_map<std::string, std::string> is_an_alias_generated_by_load;
   for (auto [origin_var_name, _] : var_to_version) {
     if (cur_block->phi_map.find(origin_var_name) != cur_block->phi_map.end()) {

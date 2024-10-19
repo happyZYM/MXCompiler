@@ -9,7 +9,7 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
   for (auto cur_node : cfg.nodes) {
     auto cur_block = cur_node->corresponding_block;
     if (cur_block->actions.size() > 0) {
-      if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(cur_block->actions[0])) {
+      if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(cur_block->actions.front())) {
         // simple phi action caused by and, or and ternary operator, no need to insert extra blocks, just remove it and
         // add phi values to the corresponding blocks
         cur_block->actions.erase(cur_block->actions.begin());
@@ -18,6 +18,7 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
           auto new_move = std::make_shared<MoveInstruct>();
           new_move->src_full = src_val;
           new_move->dest_full = phi_act->result_full;
+          new_move->ty = phi_act->ty;
           src_block->actions.push_back(new_move);
         }
       }
@@ -32,6 +33,7 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
           auto new_move = std::make_shared<MoveInstruct>();
           new_move->src_full = src_val;
           new_move->dest_full = phi_act->result_full;
+          new_move->ty = phi_act->ty;
           src_block->actions.push_back(new_move);
         } else if (src_node->successors.size() > 1 && cur_node->predecessors.size() > 1) {
           // it is a critical edge, need to insert a new block
@@ -59,11 +61,13 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
           auto new_move = std::make_shared<MoveInstruct>();
           new_move->src_full = src_val;
           new_move->dest_full = phi_act->result_full;
+          new_move->ty = phi_act->ty;
           new_block->actions.push_back(new_move);
         } else {
           auto new_move = std::make_shared<MoveInstruct>();
           new_move->src_full = src_val;
           new_move->dest_full = phi_act->result_full;
+          new_move->ty = phi_act->ty;
           cur_block->actions.push_back(new_move);
         }
       }

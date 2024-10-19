@@ -18,10 +18,15 @@ class CFGNodeType {
   std::vector<CFGNodeType *> successors_in_dom_tree;
   CFGNodeCollection dom_frontier;
 
-  std::vector<size_t> in_active_vars;
-  std::vector<size_t> out_active_vars;
-  std::vector<size_t> use_vars;
-  std::vector<size_t> def_vars;
+  std::vector<size_t> block_in_active_vars;
+  std::vector<size_t> block_out_active_vars;
+  std::vector<size_t> block_use_vars;
+  std::vector<size_t> block_def_vars;
+
+  std::unordered_map<ActionItem *, std::vector<size_t>> action_use_vars;
+  std::unordered_map<ActionItem *, std::vector<size_t>> action_def_vars;
+  std::unordered_map<ActionItem *, std::vector<size_t>> action_in_active_vars;
+  std::unordered_map<ActionItem *, std::vector<size_t>> action_out_active_vars;
 };
 
 class CFGType {
@@ -30,6 +35,9 @@ class CFGType {
   CFGNodeType *entry;
   std::unordered_map<BlockItem *, CFGNodeType *> block_to_node;
   std::unordered_map<std::string, BlockItem *> label_to_block;
+  std::vector<std::string> id_to_var;
+  std::unordered_map<std::string, size_t> var_to_id;
+  FunctionDefItem *corresponding_func;
 };
 
 template <typename Container, typename Compare = std::less<typename Container::value_type>>

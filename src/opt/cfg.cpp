@@ -41,5 +41,6 @@ CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func) {
       throw std::runtime_error("Block does not have an exit action");
     }
   }
+  res.corresponding_func = func.get();
   return res;
 }

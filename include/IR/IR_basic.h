@@ -248,7 +248,7 @@ class BlockItem : public LLVMIRItemBase {
  public:
   std::string label_full;
   std::unordered_map<std::string, std::shared_ptr<PhiItem>> phi_map;  // this is used to store phi items when optimizing
-  std::vector<std::shared_ptr<ActionItem>> actions;
+  std::list<std::shared_ptr<ActionItem>> actions;
   std::shared_ptr<JMPActionItem> exit_action;
 
   BlockItem() = default;

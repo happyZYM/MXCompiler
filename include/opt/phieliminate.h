@@ -7,6 +7,7 @@ class MoveInstruct : public ActionItem {
  public:
   std::string src_full;
   std::string dest_full;
+  LLVMType ty;
   MoveInstruct() = default;
   void RecursivePrint([[maybe_unused]] std::ostream &os) const {
     throw std::runtime_error("Move instruction is not an actual LLVM IR instruction");
