@@ -46,7 +46,8 @@ int main(int argc, char **argv) {
       GenerateNaiveASM(fout, IR);
     } else {
       auto IR_with_out_allocas = Mem2Reg(IR);
-      IR_with_out_allocas->RecursivePrint(fout);
+      // IR_with_out_allocas->RecursivePrint(fout);
+      auto IR_with_out_phis = PhiEliminate(IR_with_out_allocas);
     }
   } catch (const SemanticError &err) {
     std::cout << err.what() << std::endl;

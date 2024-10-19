@@ -8,8 +8,10 @@
 using CFGNodeCollection = std::list<class CFGNodeType *>;
 class CFGNodeType {
  public:
+  // successors, predecessors, corresponding_block is provided by BuildCFGForFunction
   std::vector<CFGNodeType *> successors, predecessors;
   BlockItem *corresponding_block;
+  // the following fields are provided by user
   CFGNodeCollection dom;
   bool visited;
   CFGNodeType *idom;

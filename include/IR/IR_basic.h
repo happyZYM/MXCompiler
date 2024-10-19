@@ -89,17 +89,9 @@ class BRAction : public JMPActionItem {
   }
 };
 class UNConditionJMPAction : public JMPActionItem {
-  friend class IRBuilder;
-  friend class FunctionDefItem;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        NaiveBackend::FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
-  friend class CFGType BuildCFGForFunction(const std::shared_ptr<class FunctionDefItem> &func);
+ public:
   std::string label_full;
 
- public:
   UNConditionJMPAction() = default;
   void RecursivePrint(std::ostream &os) const { os << "br label %" << label_full << "\n"; }
 };
@@ -492,10 +484,7 @@ class ConstStrItem : public LLVMIRItemBase {
   }
 };
 class ModuleItem : public LLVMIRItemBase {
-  friend class IRBuilder;
-  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend std::shared_ptr<ModuleItem> Mem2Reg(std::shared_ptr<ModuleItem> src);
+ public:
   std::vector<std::shared_ptr<ConstStrItem>> const_strs;
   std::vector<std::shared_ptr<FunctionDeclareItem>> function_declares;
   std::vector<std::shared_ptr<TypeDefItem>> type_defs;
@@ -503,7 +492,6 @@ class ModuleItem : public LLVMIRItemBase {
   std::vector<std::shared_ptr<FunctionDefItem>> function_defs;
   std::unordered_map<std::string, IRClassInfo> low_level_class_info;
 
- public:
   ModuleItem() = default;
   void RecursivePrint(std::ostream &os) const {
     for (auto &item : const_strs) {
