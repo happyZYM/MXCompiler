@@ -33,4 +33,15 @@ class LoadSpilledArgs : public ActionItem {
     throw std::runtime_error("LoadSpilledArgs instruction is not an actual LLVM IR instruction");
   }
 };
+
+class StoreSpilledArgs : public ActionItem {
+ public:
+  size_t arg_id;  // [8,+inf)
+  std::string var_full;
+  LLVMType ty;
+  StoreSpilledArgs() = default;
+  void RecursivePrint(std::ostream &os) const {
+    throw std::runtime_error("StoreSpilledArgs instruction is not an actual LLVM IR instruction");
+  }
+};
 }  // namespace opt

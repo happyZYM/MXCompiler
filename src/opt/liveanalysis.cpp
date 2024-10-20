@@ -5,6 +5,7 @@
 #include "cfg.h"
 #include "tools.h"
 
+using namespace opt;
 void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordered_map<std::string, size_t> &var_to_id) {
   for (auto node : cfg.nodes) {
     auto block = node->corresponding_block;
@@ -29,6 +30,15 @@ void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordere
       } else if (auto select_act = std::dynamic_pointer_cast<SelectItem>(act)) {
         id_to_var.push_back(select_act->result_full);
         var_to_id[select_act->result_full] = id_to_var.size() - 1;
+      } else if (auto move_act = std::dynamic_pointer_cast<MoveInstruct>(act)) {
+        id_to_var.push_back(move_act->dest_full);
+        var_to_id[move_act->dest_full] = id_to_var.size() - 1;
+      } else if (auto force_def_act = std::dynamic_pointer_cast<ForceDef>(act)) {
+        id_to_var.push_back(force_def_act->var_full);
+        var_to_id[force_def_act->var_full] = id_to_var.size() - 1;
+      } else if (auto load_spilled_args_act = std::dynamic_pointer_cast<LoadSpilledArgs>(act)) {
+        id_to_var.push_back(load_spilled_args_act->var_full);
+        var_to_id[load_spilled_args_act->var_full] = id_to_var.size() - 1;
       }
     }
   }
@@ -134,6 +144,29 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
         }
         if (var_to_id.find(select_act->result_full) != var_to_id.end()) {
           cur_act_def.push_back(var_to_id[select_act->result_full]);
+        }
+      } else if (auto move_act = std::dynamic_pointer_cast<MoveInstruct>(act)) {
+        if (var_to_id.find(move_act->src_full) != var_to_id.end()) {
+          cur_act_use.push_back(var_to_id[move_act->src_full]);
+        }
+        if (var_to_id.find(move_act->dest_full) != var_to_id.end()) {
+          cur_act_def.push_back(var_to_id[move_act->dest_full]);
+        }
+      } else if (auto force_def_act = std::dynamic_pointer_cast<ForceDef>(act)) {
+        if (var_to_id.find(force_def_act->var_full) != var_to_id.end()) {
+          cur_act_def.push_back(var_to_id[force_def_act->var_full]);
+        }
+      } else if (auto force_use_act = std::dynamic_pointer_cast<ForceUse>(act)) {
+        if (var_to_id.find(force_use_act->var_full) != var_to_id.end()) {
+          cur_act_use.push_back(var_to_id[force_use_act->var_full]);
+        }
+      } else if (auto load_spilled_args_act = std::dynamic_pointer_cast<LoadSpilledArgs>(act)) {
+        if (var_to_id.find(load_spilled_args_act->var_full) != var_to_id.end()) {
+          cur_act_def.push_back(var_to_id[load_spilled_args_act->var_full]);
+        }
+      } else if (auto store_spilled_args_act = std::dynamic_pointer_cast<StoreSpilledArgs>(act)) {
+        if (var_to_id.find(store_spilled_args_act->var_full) != var_to_id.end()) {
+          cur_act_use.push_back(var_to_id[store_spilled_args_act->var_full]);
         }
       }
       std::sort(cur_act_use.begin(), cur_act_use.end());
