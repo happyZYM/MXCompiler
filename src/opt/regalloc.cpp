@@ -1,5 +1,7 @@
 #include "regalloc.h"
 #include "IR/IR_basic.h"
+#include "cfg.h"
+#include "confgraph.h"
 #include "liveanalysis.h"
 #include "phieliminate.h"
 #include "tools.h"
@@ -125,17 +127,22 @@ void EnforcePhysicalRegs(CFGType &cfg) {
     }
   }
 }
-void ConductRegAllocForFunction([[maybe_unused]] std::shared_ptr<FunctionDefItem> func, CFGType &cfg) {
-  EnforcePhysicalRegs(cfg);
-  LiveAnalysis(cfg);
+void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
+  CFGType cfg;
+  ConfGraph confgraph;
+  do {
+    cfg = BuildCFGForFunction(func);
+    EnforcePhysicalRegs(cfg);
+    LiveAnalysis(cfg);
+    confgraph = BuildConfGraph(cfg);
+  } while (TryColoring(func, cfg, confgraph));
 }
 
 std::shared_ptr<ModuleItem> RegAlloc(std::shared_ptr<ModuleItem> src) {
   auto res = src;
   for (auto &func : res->function_defs) {
     // func = std::make_shared<FunctionDefItem>(*func);
-    auto cfg = BuildCFGForFunction(func);
-    ConductRegAllocForFunction(func, cfg);
+    ConductRegAllocForFunction(func);
   }
   return res;
 }
