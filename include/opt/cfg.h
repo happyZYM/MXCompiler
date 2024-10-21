@@ -150,3 +150,15 @@ bool GetCollectionsIsSame(const Container &a, const Container &b, Compare comp =
 }
 
 CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);
+
+// RISC-V calling convention compatible
+const static std::vector<std::string> held_tmp_regs = {"x28", "x29", "x30", "x31"};
+const static std::string zero = "x0", sp = "x2", ra = "x1", fp = "x8";
+const static std::vector<std::string> callee_saved_regs = {"x3",  "x4",  "x9",  "x18", "x19", "x20", "x21",
+                                                           "x22", "x23", "x24", "x25", "x26", "x27"};
+const static std::vector<std::string> caller_saved_regs = {"x5",  "x6",  "x7",  "x10", "x11", "x12",
+                                                           "x13", "x14", "x15", "x16", "x17"};
+const static std::vector<std::string> arg_regs = {"x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"};
+const static std::vector<std::string> allocating_regs = {"x3",  "x4",  "x9",  "x18", "x19", "x20", "x21", "x22",
+                                                         "x23", "x24", "x25", "x26", "x27", "x5",  "x6",  "x7",
+                                                         "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"};

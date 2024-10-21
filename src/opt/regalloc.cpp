@@ -6,14 +6,6 @@
 #include "phieliminate.h"
 #include "tools.h"
 
-// RISC-V calling convention compatible
-static std::vector<std::string> held_tmp_regs = {"x28", "x29", "x30", "x31"};
-static std::vector<std::string> callee_saved_regs = {"x3",  "x4",  "x9",  "x18", "x19", "x20", "x21",
-                                                     "x22", "x23", "x24", "x25", "x26", "x27"};
-static std::vector<std::string> caller_saved_regs = {"x5",  "x6",  "x7",  "x10", "x11", "x12",
-                                                     "x13", "x14", "x15", "x16", "x17"};
-static std::vector<std::string> arg_regs = {"x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"};
-static std::string zero = "x0", sp = "x2", ra = "x1", fp = "x8";
 void EnforcePhysicalRegs(CFGType &cfg) {
   using namespace opt;
   // process callee side
@@ -128,14 +120,16 @@ void EnforcePhysicalRegs(CFGType &cfg) {
   }
 }
 void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
+  std::cerr << "processing function " << func->func_name_raw << std::endl;
   CFGType cfg;
   ConfGraph confgraph;
+  cfg = BuildCFGForFunction(func);
+  EnforcePhysicalRegs(cfg);
   do {
     cfg = BuildCFGForFunction(func);
-    EnforcePhysicalRegs(cfg);
     LiveAnalysis(cfg);
     confgraph = BuildConfGraph(cfg);
-  } while (TryColoring(func, cfg, confgraph));
+  } while (ConductColoring(func, cfg, confgraph));
 }
 
 std::shared_ptr<ModuleItem> RegAlloc(std::shared_ptr<ModuleItem> src) {

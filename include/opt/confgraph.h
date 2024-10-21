@@ -3,19 +3,32 @@
 #include "cfg.h"
 class ConfGraphNode {
  public:
-  std::string var_name;
+  const static size_t kInf = (std::numeric_limits<size_t>::max()) >> 2;
+  std::vector<size_t> var_ids;
   size_t color;
-  bool is_move_related;
-  bool move_related_but_frozen;
+  size_t degree;
   bool is_binded_with_physical_reg;
-  std::vector<ConfGraphNode *> neighbors;
-  ConfGraphNode(std::string var_name) : var_name(var_name) {}
+  std::list<ConfGraphNode *> neighbors;
+  std::list<opt::MoveInstruct *> move_neighbors;
+  ConfGraphNode() = default;
 };
 class ConfGraph {
  public:
-  std::unordered_map<std::string, ConfGraphNode *> name_to_node;
+  // available after construction
+  std::unordered_map<size_t, ConfGraphNode *> id_to_node;
   std::vector<std::shared_ptr<ConfGraphNode>> nodes;
+  std::unordered_map<ConfGraphNode *, std::unordered_map<ConfGraphNode *, std::list<ConfGraphNode *>::iterator>>
+      adj_table;
+
+  // available during coloring
+  std::vector<ConfGraphNode *> stack;
+  std::vector<ConfGraphNode *> actual_spills;
+  std::unordered_set<ConfGraphNode *> low_degree_and_not_move_related;
+  std::unordered_set<ConfGraphNode *> low_degree_and_move_related;
+  std::unordered_set<ConfGraphNode *> high_degree_nodes;
+  std::unordered_set<opt::MoveInstruct *> pending_moves;
+  std::unordered_set<opt::MoveInstruct *> potential_moves;
 };
 
 ConfGraph BuildConfGraph(CFGType &cfg);
-bool TryColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph& confgraph);
+bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
