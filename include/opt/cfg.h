@@ -38,6 +38,15 @@ class CFGType {
   std::vector<std::string> id_to_var;
   std::unordered_map<std::string, size_t> var_to_id;
   FunctionDefItem *corresponding_func;
+  void init() {
+    nodes.clear();
+    entry = nullptr;
+    block_to_node.clear();
+    label_to_block.clear();
+    id_to_var.clear();
+    var_to_id.clear();
+    corresponding_func = nullptr;
+  }
 };
 
 namespace opt {
@@ -48,7 +57,7 @@ class MoveInstruct : public ActionItem {
   LLVMType ty;
   MoveInstruct() = default;
   void RecursivePrint([[maybe_unused]] std::ostream &os) const {
-    throw std::runtime_error("Move instruction is not an actual LLVM IR instruction");
+    os << "[Persudo] " << dest_full << " <-- " << src_full << "\n";
   }
 };
 }  // namespace opt
@@ -162,3 +171,8 @@ const static std::vector<std::string> arg_regs = {"x10", "x11", "x12", "x13", "x
 const static std::vector<std::string> allocating_regs = {"x3",  "x4",  "x9",  "x18", "x19", "x20", "x21", "x22",
                                                          "x23", "x24", "x25", "x26", "x27", "x5",  "x6",  "x7",
                                                          "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"};
+
+inline bool VRegCheck(const std::string &s) {
+  if (s[0] != '%') return false;
+  return true;
+}

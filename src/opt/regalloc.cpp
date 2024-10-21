@@ -11,6 +11,10 @@ void EnforcePhysicalRegs(CFGType &cfg) {
   // process callee side
   auto entry_node = cfg.entry;
   auto func = cfg.corresponding_func;
+  std::unordered_set<std::string> missing_caller_saved_regs;
+  for (auto reg : caller_saved_regs) {
+    missing_caller_saved_regs.insert(reg);
+  }
   for (size_t i = 0; i < 8 && i < func->args_full_name.size(); i++) {
     auto new_def = std::make_shared<ForceDef>();
     new_def->var_full = "%reg." + arg_regs[i];
@@ -21,6 +25,7 @@ void EnforcePhysicalRegs(CFGType &cfg) {
     new_move->ty = func->args[i];
     entry_node->corresponding_block->actions.push_front(new_move);
     entry_node->corresponding_block->actions.push_front(new_def);
+    missing_caller_saved_regs.erase(arg_regs[i]);
   }
   for (size_t i = 8; i < func->args_full_name.size(); i++) {
     auto arg_load = std::make_shared<LoadSpilledArgs>();
@@ -58,6 +63,7 @@ void EnforcePhysicalRegs(CFGType &cfg) {
         new_move->src_full = std::dynamic_pointer_cast<RETAction>(block->exit_action)->value;
         new_move->dest_full = "%reg.x10";
         new_move->ty = std::dynamic_pointer_cast<RETAction>(block->exit_action)->type;
+        if (new_move->src_full == "%reg.x10" && new_move->dest_full == "%reg.x10") throw std::runtime_error("error");
         block->actions.push_back(new_move);
         std::dynamic_pointer_cast<RETAction>(block->exit_action)->value = "%reg.x10";
       }
@@ -82,6 +88,7 @@ void EnforcePhysicalRegs(CFGType &cfg) {
       std::unordered_set<std::string> caller_saved_regs_to_process;
       for (auto reg : caller_saved_regs) {
         caller_saved_regs_to_process.insert(reg);
+        missing_caller_saved_regs.erase(reg);
       }
       for (size_t i = 0; i < call_act->args_val_full.size() & i < 8; i++) {
         auto new_move = std::make_shared<MoveInstruct>();
@@ -118,6 +125,16 @@ void EnforcePhysicalRegs(CFGType &cfg) {
       --it_act;
     }
   }
+  // avoid missing some caller saved regs
+  for (auto reg : missing_caller_saved_regs) {
+    auto new_def = std::make_shared<ForceDef>();
+    new_def->var_full = "%reg." + reg;
+    new_def->ty = LLVMIRIntType(32);
+    auto new_use = std::make_shared<ForceUse>();
+    new_use->var_full = "%reg." + reg;
+    entry_node->corresponding_block->actions.push_front(new_use);
+    entry_node->corresponding_block->actions.push_front(new_def);
+  }
 }
 void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   std::cerr << "processing function " << func->func_name_raw << std::endl;
@@ -125,9 +142,12 @@ void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   ConfGraph confgraph;
   cfg = BuildCFGForFunction(func);
   EnforcePhysicalRegs(cfg);
+  func->RecursivePrint(std::cerr);
   do {
+    cfg.init();
     cfg = BuildCFGForFunction(func);
     LiveAnalysis(cfg);
+    confgraph.init();
     confgraph = BuildConfGraph(cfg);
   } while (ConductColoring(func, cfg, confgraph));
 }

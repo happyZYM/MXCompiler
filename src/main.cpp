@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
       auto IR_with_out_allocas = Mem2Reg(IR);
       IR_with_out_allocas->RecursivePrint(fout);
       auto IR_with_out_phis = PhiEliminate(IR_with_out_allocas);
+      // IR_with_out_phis->RecursivePrint(fout);
       auto alloced_code = RegAlloc(IR_with_out_phis);
     }
   } catch (const SemanticError &err) {

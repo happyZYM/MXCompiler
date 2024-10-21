@@ -11,17 +11,13 @@ class ForceDef : public ActionItem {
   std::string var_full;
   LLVMType ty;
   ForceDef() = default;
-  void RecursivePrint(std::ostream &os) const {
-    throw std::runtime_error("ForceDef instruction is not an actual LLVM IR instruction");
-  }
+  void RecursivePrint(std::ostream &os) const { os << "[Persudo] def " << var_full << "\n"; }
 };
 class ForceUse : public ActionItem {
  public:
   std::string var_full;
   ForceUse() = default;
-  void RecursivePrint(std::ostream &os) const {
-    throw std::runtime_error("ForceUse instruction is not an actual LLVM IR instruction");
-  }
+  void RecursivePrint(std::ostream &os) const { os << "[Persudo] use " << var_full << "\n"; }
 };
 class LoadSpilledArgs : public ActionItem {
  public:
@@ -30,7 +26,7 @@ class LoadSpilledArgs : public ActionItem {
   LLVMType ty;
   LoadSpilledArgs() = default;
   void RecursivePrint(std::ostream &os) const {
-    throw std::runtime_error("LoadSpilledArgs instruction is not an actual LLVM IR instruction");
+    os << "[Persudo] load spilled args " << var_full << "with id=" << arg_id << "\n";
   }
 };
 
@@ -41,7 +37,7 @@ class StoreSpilledArgs : public ActionItem {
   LLVMType ty;
   StoreSpilledArgs() = default;
   void RecursivePrint(std::ostream &os) const {
-    throw std::runtime_error("StoreSpilledArgs instruction is not an actual LLVM IR instruction");
+    os << "[Persudo] store spilled args " << var_full << "with id=" << arg_id << "\n";
   }
 };
 }  // namespace opt

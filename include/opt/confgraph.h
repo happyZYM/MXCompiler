@@ -5,12 +5,11 @@
 class ConfGraphNode {
  public:
   const static size_t kInf = (std::numeric_limits<size_t>::max()) >> 2;
-  std::vector<size_t> var_ids;
+  std::list<size_t> var_ids;
   size_t color;
   size_t degree;
   bool is_binded_with_physical_reg;
   std::list<ConfGraphNode *> neighbors;
-  std::list<std::pair<ConfGraphNode *, opt::MoveInstruct *>> move_neighbors;
 
   // the following are for graph maintenance
   ConfGraphNode *is_merged_into;
@@ -21,6 +20,7 @@ class ConfGraphNode {
   bool is_temporarily_removed;
   std::list<ConfGraphNode *> neighbors_half_available;
   std::list<ConfGraphNode *> neighbors_not_available;
+  std::list<std::pair<ConfGraphNode *, opt::MoveInstruct *>> original_move_neighbors;
 };
 class ConfGraph {
  public:
@@ -39,6 +39,24 @@ class ConfGraph {
   std::unordered_set<opt::MoveInstruct *> pending_moves;
 
   std::unordered_set<opt::MoveInstruct *> potential_moves;
+  std::unordered_map<ConfGraphNode *, std::unordered_map<ConfGraphNode *, std::list<ConfGraphNode *>::iterator>>
+      adj_table_half_available;
+  std::unordered_map<ConfGraphNode *, std::unordered_map<ConfGraphNode *, std::list<ConfGraphNode *>::iterator>>
+      adj_table_not_available;
+  void init() {
+    id_to_node.clear();
+    nodes.clear();
+    adj_table.clear();
+    stack.clear();
+    actual_spills.clear();
+    low_degree_and_not_move_related.clear();
+    low_degree_and_move_related.clear();
+    high_degree_nodes.clear();
+    pending_moves.clear();
+    potential_moves.clear();
+    adj_table_half_available.clear();
+    adj_table_not_available.clear();
+  }
 };
 
 ConfGraph BuildConfGraph(CFGType &cfg);

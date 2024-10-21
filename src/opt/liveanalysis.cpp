@@ -7,40 +7,45 @@
 
 using namespace opt;
 void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordered_map<std::string, size_t> &var_to_id) {
+  auto TryAddVar = [&](const std::string &var) {
+    if (var_to_id.find(var) == var_to_id.end()) {
+      id_to_var.push_back(var);
+      var_to_id[var] = id_to_var.size() - 1;
+    }
+  };
   for (auto node : cfg.nodes) {
     auto block = node->corresponding_block;
     for (auto act : block->actions) {
       if (auto bin_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
-        id_to_var.push_back(bin_act->result_full);
-        var_to_id[bin_act->result_full] = id_to_var.size() - 1;
+        TryAddVar(bin_act->result_full);
       } else if (auto load_act = std::dynamic_pointer_cast<LoadAction>(act)) {
-        id_to_var.push_back(load_act->result_full);
-        var_to_id[load_act->result_full] = id_to_var.size() - 1;
+        TryAddVar(load_act->result_full);
       } else if (auto get_act = std::dynamic_pointer_cast<GetElementPtrAction>(act)) {
-        id_to_var.push_back(get_act->result_full);
-        var_to_id[get_act->result_full] = id_to_var.size() - 1;
+        TryAddVar(get_act->result_full);
       } else if (auto icmp_act = std::dynamic_pointer_cast<ICMPAction>(act)) {
-        id_to_var.push_back(icmp_act->result_full);
-        var_to_id[icmp_act->result_full] = id_to_var.size() - 1;
+        TryAddVar(icmp_act->result_full);
+        ;
       } else if (auto call_act = std::dynamic_pointer_cast<CallItem>(act)) {
         if (!std::holds_alternative<LLVMVOIDType>(call_act->return_type)) {
-          id_to_var.push_back(call_act->result_full);
-          var_to_id[call_act->result_full] = id_to_var.size() - 1;
+          TryAddVar(call_act->result_full);
         }
       } else if (auto select_act = std::dynamic_pointer_cast<SelectItem>(act)) {
-        id_to_var.push_back(select_act->result_full);
-        var_to_id[select_act->result_full] = id_to_var.size() - 1;
+        TryAddVar(select_act->result_full);
       } else if (auto move_act = std::dynamic_pointer_cast<MoveInstruct>(act)) {
-        id_to_var.push_back(move_act->dest_full);
-        var_to_id[move_act->dest_full] = id_to_var.size() - 1;
+        TryAddVar(move_act->dest_full);
       } else if (auto force_def_act = std::dynamic_pointer_cast<ForceDef>(act)) {
-        id_to_var.push_back(force_def_act->var_full);
-        var_to_id[force_def_act->var_full] = id_to_var.size() - 1;
+        TryAddVar(force_def_act->var_full);
       } else if (auto load_spilled_args_act = std::dynamic_pointer_cast<LoadSpilledArgs>(act)) {
-        id_to_var.push_back(load_spilled_args_act->var_full);
-        var_to_id[load_spilled_args_act->var_full] = id_to_var.size() - 1;
+        TryAddVar(load_spilled_args_act->var_full);
+      } else if (auto alloca_act = std::dynamic_pointer_cast<AllocaAction>(act)) {
+        TryAddVar(alloca_act->name_full);
       }
     }
+  }
+  for (size_t i = 0; i < id_to_var.size(); i++) {
+    if (var_to_id.find(id_to_var[i]) == var_to_id.end())
+      throw std::runtime_error("var_to_id.find(id_to_var[i])==var_to_id.end()");
+    if (i != var_to_id[id_to_var[i]]) throw std::runtime_error("i!=var_to_id[id_to_var[i]]");
   }
 }
 
@@ -146,7 +151,7 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
           cur_act_def.push_back(var_to_id[select_act->result_full]);
         }
       } else if (auto move_act = std::dynamic_pointer_cast<MoveInstruct>(act)) {
-        if (var_to_id.find(move_act->src_full) != var_to_id.end()) {
+        if (VRegCheck(move_act->src_full) && var_to_id.find(move_act->src_full) != var_to_id.end()) {
           cur_act_use.push_back(var_to_id[move_act->src_full]);
         }
         if (var_to_id.find(move_act->dest_full) != var_to_id.end()) {
@@ -168,6 +173,8 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
         if (var_to_id.find(store_spilled_args_act->var_full) != var_to_id.end()) {
           cur_act_use.push_back(var_to_id[store_spilled_args_act->var_full]);
         }
+      } else if (auto alloca_act = std::dynamic_pointer_cast<AllocaAction>(act)) {
+        cur_act_def.push_back(var_to_id[alloca_act->name_full]);
       }
       std::sort(cur_act_use.begin(), cur_act_use.end());
       std::sort(cur_act_def.begin(), cur_act_def.end());
