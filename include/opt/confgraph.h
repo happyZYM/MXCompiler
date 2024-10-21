@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include "IR/IR_basic.h"
 #include "cfg.h"
 class ConfGraphNode {
@@ -9,8 +10,17 @@ class ConfGraphNode {
   size_t degree;
   bool is_binded_with_physical_reg;
   std::list<ConfGraphNode *> neighbors;
-  std::list<opt::MoveInstruct *> move_neighbors;
-  ConfGraphNode() = default;
+  std::list<std::pair<ConfGraphNode *, opt::MoveInstruct *>> move_neighbors;
+
+  // the following are for graph maintenance
+  ConfGraphNode *is_merged_into;
+  static ConfGraphNode *FindFather(ConfGraphNode *x) {
+    if (x->is_merged_into == x) return x;
+    return x->is_merged_into = FindFather(x->is_merged_into);
+  }
+  bool is_temporarily_removed;
+  std::list<ConfGraphNode *> neighbors_half_available;
+  std::list<ConfGraphNode *> neighbors_not_available;
 };
 class ConfGraph {
  public:
@@ -27,6 +37,7 @@ class ConfGraph {
   std::unordered_set<ConfGraphNode *> low_degree_and_move_related;
   std::unordered_set<ConfGraphNode *> high_degree_nodes;
   std::unordered_set<opt::MoveInstruct *> pending_moves;
+
   std::unordered_set<opt::MoveInstruct *> potential_moves;
 };
 
