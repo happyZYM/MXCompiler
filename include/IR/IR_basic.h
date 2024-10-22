@@ -372,6 +372,7 @@ class FunctionDefItem : public LLVMIRItemBase {
   std::vector<std::string> args_full_name;
   std::shared_ptr<BlockItem> init_block;
   std::vector<std::shared_ptr<BlockItem>> basic_blocks;
+  size_t spilled_vars;
 
   FunctionDefItem() = default;
   void RecursivePrint(std::ostream &os) const {

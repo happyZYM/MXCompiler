@@ -43,7 +43,7 @@ ConfGraph BuildConfGraph(CFGType &cfg) {
     size_t reg_id = cfg.var_to_id["%reg." + reg];
     res.id_to_node[reg_id]->is_binded_with_physical_reg = true;
     res.id_to_node[reg_id]->color = std::stoi(reg.substr(1));
-    std::cerr << "coloring node whith id=" << reg_id << " with color=" << res.id_to_node[reg_id]->color << std::endl;
+    // std::cerr << "coloring node whith id=" << reg_id << " with color=" << res.id_to_node[reg_id]->color << std::endl;
     res.id_to_node[reg_id]->degree = ConfGraphNode::kInf;
   }
   for (auto cfg_node : cfg.nodes) {
@@ -123,11 +123,11 @@ void DetachNode(ConfGraphNode *node, ConfGraph &confgraph) {
   node->is_temporarily_removed = true;
   if (node->is_binded_with_physical_reg)
     throw std::runtime_error("something strange happened: a physical register is removed");
-  std::cerr << "detaching node containing var ids:";
-  for (auto id : node->var_ids) {
-    std::cerr << id << " ";
-  }
-  std::cerr << std::endl;
+  // std::cerr << "detaching node containing var ids:";
+  // for (auto id : node->var_ids) {
+  //   std::cerr << id << " ";
+  // }
+  // std::cerr << std::endl;
   for (auto neighbor : node->neighbors_half_available) {
     neighbor->neighbors_half_available.erase(confgraph.adj_table_half_available[neighbor][node]);
     confgraph.adj_table_half_available[neighbor].erase(node);
@@ -170,6 +170,35 @@ void JoinNode(ConfGraphNode *node, ConfGraph &confgraph) {
   // this function operates on the conflict graph, temporarily remove the node from the graph, it do nothing on the move
   // link graph although they share the same node set
   // It is also responsible for maintaining all the changes caused by the removal of the node
+  if (!node->is_temporarily_removed)
+    throw std::runtime_error("something strange happened: a node is not temporarily removed");
+  node->is_temporarily_removed = false;
+  if (node->is_binded_with_physical_reg)
+    throw std::runtime_error("something strange happened: a physical register is removed");
+  // upgrade half available neighbors to available neighbors
+  for (auto neighbor : node->neighbors_half_available) {
+    neighbor->neighbors_half_available.erase(confgraph.adj_table_half_available[neighbor][node]);
+    confgraph.adj_table_half_available[neighbor].erase(node);
+    // node->neighbors_half_available.erase(confgraph.adj_table_half_available[node][neighbor]);
+    confgraph.adj_table_half_available[node].erase(neighbor);
+    neighbor->neighbors.push_back(node);
+    confgraph.adj_table[neighbor][node] = std::prev(neighbor->neighbors.end());
+    node->neighbors.push_back(neighbor);
+    confgraph.adj_table[node][neighbor] = std::prev(node->neighbors.end());
+  }
+  node->neighbors_half_available.clear();
+  // upgrade not available neighbors to half available neighbors
+  for (auto neighbor : node->neighbors_not_available) {
+    neighbor->neighbors_not_available.erase(confgraph.adj_table_not_available[neighbor][node]);
+    confgraph.adj_table_not_available[neighbor].erase(node);
+    // node->neighbors_not_available.erase(confgraph.adj_table_not_available[node][neighbor]);
+    confgraph.adj_table_not_available[node].erase(neighbor);
+    neighbor->neighbors_half_available.push_back(node);
+    confgraph.adj_table_half_available[neighbor][node] = std::prev(neighbor->neighbors_half_available.end());
+    node->neighbors_half_available.push_back(neighbor);
+    confgraph.adj_table_half_available[node][neighbor] = std::prev(node->neighbors_half_available.end());
+  }
+  node->neighbors_not_available.clear();
 }
 
 void MergeNodeInto(ConfGraphNode *node, ConfGraphNode *target, ConfGraph &confgraph) {
@@ -177,16 +206,16 @@ void MergeNodeInto(ConfGraphNode *node, ConfGraphNode *target, ConfGraph &confgr
   // It is also responsible for maintaining all the changes caused by the merge of the node
   if (node->is_temporarily_removed)
     throw std::runtime_error("something strange happened: a temporarily removed node is merged");
-  std::cerr << "node ids:";
-  for (auto id : node->var_ids) {
-    std::cerr << id << " ";
-  }
-  std::cerr << std::endl;
-  std::cerr << "target ids:";
-  for (auto id : target->var_ids) {
-    std::cerr << id << " ";
-  }
-  std::cerr << std::endl;
+  // std::cerr << "node ids:";
+  // for (auto id : node->var_ids) {
+  //   std::cerr << id << " ";
+  // }
+  // std::cerr << std::endl;
+  // std::cerr << "target ids:";
+  // for (auto id : target->var_ids) {
+  //   std::cerr << id << " ";
+  // }
+  // std::cerr << std::endl;
   confgraph.low_degree_and_move_related.erase(node);
   confgraph.low_degree_and_not_move_related.erase(node);
   confgraph.high_degree_nodes.erase(node);
@@ -264,6 +293,9 @@ void Coalesce(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &con
   if (src_node == dest_node) {
     return;
   }
+  if (src_node->is_temporarily_removed || dest_node->is_temporarily_removed) {
+    return;
+  }
   if (confgraph.adj_table[src_node].find(dest_node) != confgraph.adj_table[src_node].end()) {
     // no need to update low_degree_and_move_related, when confgraph.pending_moves.size()==0, nodes in
     // low_degree_and_move_related will automatically be moved to low_degree_and_not_move_related
@@ -328,12 +360,12 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
   if (cfg.id_to_var.size() != cfg.var_to_id.size()) {
     throw std::runtime_error("something strange happened: id_to_var and var_to_id do not match");
   }
-  for (size_t i = 0; i < cfg.id_to_var.size(); i++) {
-    std::cerr << "id=" << i << " var=" << cfg.id_to_var[i] << std::endl;
-    if (i != cfg.var_to_id[cfg.id_to_var[i]]) {
-      throw std::runtime_error("something strange happened: id_to_var and var_to_id do not match");
-    }
-  }
+  // for (size_t i = 0; i < cfg.id_to_var.size(); i++) {
+  //   std::cerr << "id=" << i << " var=" << cfg.id_to_var[i] << std::endl;
+  //   if (i != cfg.var_to_id[cfg.id_to_var[i]]) {
+  //     throw std::runtime_error("something strange happened: id_to_var and var_to_id do not match");
+  //   }
+  // }
   if (cfg.id_to_var.size() != confgraph.nodes.size()) {
     throw std::runtime_error("something strange happened: id_to_var and confgraph.nodes do not match");
   }
@@ -376,19 +408,93 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
     } else if (confgraph.pending_moves.size() > 0) {
       Coalesce(src, cfg, confgraph);
     } else if (confgraph.low_degree_and_move_related.size() > 0) {
-      Freeze(src, cfg, confgraph);
+      bool new_pending_move_available = false;
+      if (confgraph.potential_moves.size() > 0) {
+        std::vector<opt::MoveInstruct *> removed;
+        for (auto move : confgraph.potential_moves) {
+          auto src_node = confgraph.id_to_node[cfg.var_to_id[move->src_full]];
+          auto dest_node = confgraph.id_to_node[cfg.var_to_id[move->dest_full]];
+          src_node = ConfGraphNode::FindFather(src_node);
+          dest_node = ConfGraphNode::FindFather(dest_node);
+          if (src_node == dest_node) {
+            removed.push_back(move);
+          } else if (src_node->is_temporarily_removed || dest_node->is_temporarily_removed) {
+            removed.push_back(move);
+          } else if (confgraph.adj_table[src_node].find(dest_node) != confgraph.adj_table[src_node].end()) {
+            removed.push_back(move);
+          } else {
+            if (src_node->degree < kMaxRegs && dest_node->degree < kMaxRegs) {
+              removed.push_back(move);
+              confgraph.pending_moves.insert(move);
+              new_pending_move_available = true;
+            } else if (src_node->is_binded_with_physical_reg && dest_node->is_binded_with_physical_reg) {
+              removed.push_back(move);
+              confgraph.pending_moves.insert(move);
+              new_pending_move_available = true;
+            }
+          }
+        }
+        // std::cerr << "removed size=" << removed.size() << std::endl;
+        for (auto move : removed) {
+          confgraph.potential_moves.erase(move);
+        }
+      }
+      if (!new_pending_move_available) {
+        Freeze(src, cfg, confgraph);
+      }
     } else if (confgraph.high_degree_nodes.size() > 0) {
       PotentailSpill(src, cfg, confgraph);
     }
   } while (confgraph.low_degree_and_not_move_related.size() > 0 || confgraph.pending_moves.size() > 0 ||
            confgraph.low_degree_and_move_related.size() > 0 || confgraph.high_degree_nodes.size() > 0);
   // select and spill
-  return false;
-  if (confgraph.actual_spills.size() > 0) {
-    std::cerr << "spilled " << confgraph.actual_spills.size() << " nodes" << std::endl;
-    // allocate memory for spilled nodes
-    // rewrite the spilled nodes
-    return true;
+  size_t living_nodes = confgraph.nodes.size();
+  for (auto node : confgraph.nodes) {
+    if (node->is_merged_into != node.get()) {
+      living_nodes--;
+    }
   }
-  return false;
+  living_nodes -= allocating_regs.size();
+  if (living_nodes != confgraph.stack.size()) {
+    throw std::runtime_error("something strange happened: living_nodes!=confgraph.stack.size()");
+  }
+  std::vector<size_t> all_colors;
+  for (auto reg : allocating_regs) {
+    all_colors.push_back(std::stoi(reg.substr(1)));
+  }
+  while (confgraph.stack.size() > 0) {
+    auto node = confgraph.stack.back();
+    confgraph.stack.pop_back();
+    std::unordered_set<size_t> available_colors;
+    for (auto color : all_colors) {
+      available_colors.insert(color);
+    }
+    for (auto neighbor : node->neighbors_half_available) {
+      if (!neighbor->is_binded_with_physical_reg) {
+        throw std::runtime_error("something strange happened: neighbor is not binded with physical reg");
+      }
+      available_colors.erase(neighbor->color);
+    }
+    if (available_colors.size() > 0) {
+      node->color = *(available_colors.begin());
+      JoinNode(node, confgraph);
+      node->is_binded_with_physical_reg = true;
+    } else {
+      confgraph.actual_spills.push_back(node);
+    }
+  }
+  std::cerr << "totally allocating " << confgraph.nodes.size() - allocating_regs.size() << " nodes" << std::endl;
+  std::cerr << living_nodes << std::endl;
+  std::cerr << "spilled " << confgraph.actual_spills.size() << " nodes" << std::endl;
+  // allocate memory for spilled nodes
+  // rewrite the spilled nodes
+  return false;  // as our compiler always hold 4 extra registers in hand, the spilled nodes can be easily handled, so
+                 // no need to run many iterations
+  // if (confgraph.actual_spills.size() > 0) {
+  //   std::cerr << "spilled " << confgraph.actual_spills.size() << " nodes" << std::endl;
+  //   // allocate memory for spilled nodes
+  //   // rewrite the spilled nodes
+  //   return true;
+  // }
+  // return false;
 }
