@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include "IR/IR.h"
-#include "naivebackend/naivebackend.h"
+// #include "naivebackend/naivebackend.h"
 #include "opt/opt.h"
 #include "semantic/semantic.h"
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
       return 0;
     }
     if (!optimize_all) {
-      GenerateNaiveASM(fout, IR);
+      // GenerateNaiveASM(fout, IR);
     } else {
       // IR->RecursivePrint(std::cerr);
       auto IR_with_out_allocas = Mem2Reg(IR);
