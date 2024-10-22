@@ -286,7 +286,10 @@ void MergeNodeInto(ConfGraphNode *node, ConfGraphNode *target, ConfGraph &confgr
         "something strange happened: neighbors_not_available is not empty in function MergeNodeInto");
   }
   target->degree = target->neighbors.size();
-  if (!target->is_binded_with_physical_reg) {
+  confgraph.low_degree_and_not_move_related.erase(target);
+  confgraph.low_degree_and_move_related.erase(target);
+  confgraph.high_degree_nodes.erase(target);
+  if (!target->is_binded_with_physical_reg && !target->is_temporarily_removed) {
     if (target->degree >= kMaxRegs) {
       confgraph.high_degree_nodes.insert(target);
     } else {
