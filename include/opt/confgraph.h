@@ -39,6 +39,7 @@ class ConfGraph {
   std::unordered_set<opt::MoveInstruct *> pending_moves;
 
   std::unordered_set<opt::MoveInstruct *> potential_moves;
+  std::unordered_set<opt::MoveInstruct *> awful_moves;
   std::unordered_map<ConfGraphNode *, std::unordered_map<ConfGraphNode *, std::list<ConfGraphNode *>::iterator>>
       adj_table_half_available;
   std::unordered_map<ConfGraphNode *, std::unordered_map<ConfGraphNode *, std::list<ConfGraphNode *>::iterator>>

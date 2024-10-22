@@ -1,0 +1,425 @@
+    return_type_str=int
+    recorded return type is [none-array]int
+    func_name=partition
+    recorded parameter type is [array]int with dimensions=1
+    recorded parameter name is a
+    recorded parameter type is [none-array]int
+    recorded parameter name is p
+    recorded parameter type is [none-array]int
+    recorded parameter name is r
+      Adding suite statements
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding a for statement
+        initial is an expression statement
+        condition is an expression
+        update is an expression statement
+          Adding suite statements
+            Adding an if statement
+              Adding suite statements
+                Adding an expression statement
+                Adding a definition statement
+                recorded variable type is [none-array]int
+                Adding an expression statement
+                Adding an expression statement
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding an expression statement
+        Adding an expression statement
+        Adding a jmp statement
+    return_type_str=void
+    recorded return type is [none-array]void
+    func_name=quick_sort
+    recorded parameter type is [array]int with dimensions=1
+    recorded parameter name is a
+    recorded parameter type is [none-array]int
+    recorded parameter name is p
+    recorded parameter type is [none-array]int
+    recorded parameter name is r
+      Adding suite statements
+        Adding an if statement
+          Adding a jmp statement
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding an expression statement
+        Adding an expression statement
+    return_type_str=void
+    recorded return type is [none-array]void
+    func_name=quick_sort_inf
+    recorded parameter type is [array]int with dimensions=1
+    recorded parameter name is a
+      Adding suite statements
+        Adding an expression statement
+    return_type_str=int
+    recorded return type is [none-array]int
+    func_name=main
+      Adding suite statements
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding a definition statement
+        recorded variable type is [array]int with dimensions=1
+          Adding a new array expression
+          dim 0 has size 
+        Adding a definition statement
+        recorded variable type is [none-array]int
+        Adding a for statement
+        initial is an expression statement
+        condition is an expression
+        update is an expression statement
+          Adding an expression statement
+        Adding an expression statement
+        Adding a for statement
+        initial is an expression statement
+        condition is an expression
+        update is an expression statement
+          Adding an expression statement
+        Adding an expression statement
+        Adding a jmp statement
+enter function partition
+visit definition statement
+visit definition statement
+visit definition statement
+visit definition statement
+visit definition statement
+leave function partition
+enter function quick_sort
+visit definition statement
+function to call is partition
+function to call is quick_sort
+function to call is quick_sort
+leave function quick_sort
+enter function quick_sort_inf
+function to call is quick_sort
+leave function quick_sort_inf
+enter function main
+visit definition statement
+function to call is getInt
+visit definition statement
+visit definition statement
+function to call is getInt
+function to call is quick_sort_inf
+function to call is print
+function to call is toString
+function to call is println
+leave function main
+label_init_partition:
+	dom: label_init_partition
+	dom_frontier:
+	cfg pred:
+	successors_in_dom_tree: label_0
+label_0:
+	dom: label_init_partition label_0
+	idom: label_init_partition
+	dom_frontier:
+	cfg pred: label_init_partition
+	successors_in_dom_tree: label_1
+label_1:
+	dom: label_init_partition label_0 label_1
+	idom: label_0
+	dom_frontier: label_1
+	cfg pred: label_0 label_3
+	successors_in_dom_tree: label_2 label_4
+label_2:
+	dom: label_init_partition label_0 label_1 label_2
+	idom: label_1
+	dom_frontier: label_1
+	cfg pred: label_1
+	successors_in_dom_tree: label_5 label_6
+label_5:
+	dom: label_init_partition label_0 label_1 label_2 label_5
+	idom: label_2
+	dom_frontier: label_6
+	cfg pred: label_2
+	successors_in_dom_tree:
+label_6:
+	dom: label_init_partition label_0 label_1 label_2 label_6
+	idom: label_2
+	dom_frontier: label_1
+	cfg pred: label_2 label_5
+	successors_in_dom_tree: label_3
+label_3:
+	dom: label_init_partition label_0 label_1 label_2 label_6 label_3
+	idom: label_6
+	dom_frontier: label_1
+	cfg pred: label_6
+	successors_in_dom_tree:
+label_4:
+	dom: label_init_partition label_0 label_1 label_4
+	idom: label_1
+	dom_frontier:
+	cfg pred: label_1
+	successors_in_dom_tree:
+label_init_quick_sort:
+	dom: label_init_quick_sort
+	dom_frontier:
+	cfg pred:
+	successors_in_dom_tree: label_7
+label_7:
+	dom: label_init_quick_sort label_7
+	idom: label_init_quick_sort
+	dom_frontier:
+	cfg pred: label_init_quick_sort
+	successors_in_dom_tree: label_8 label_9
+label_8:
+	dom: label_init_quick_sort label_7 label_8
+	idom: label_7
+	dom_frontier:
+	cfg pred: label_7
+	successors_in_dom_tree:
+label_9:
+	dom: label_init_quick_sort label_7 label_9
+	idom: label_7
+	dom_frontier:
+	cfg pred: label_7
+	successors_in_dom_tree:
+label_init_quick_sort_inf:
+	dom: label_init_quick_sort_inf
+	dom_frontier:
+	cfg pred:
+	successors_in_dom_tree: label_10
+label_10:
+	dom: label_init_quick_sort_inf label_10
+	idom: label_init_quick_sort_inf
+	dom_frontier:
+	cfg pred: label_init_quick_sort_inf
+	successors_in_dom_tree:
+main_init:
+	dom: main_init
+	dom_frontier:
+	cfg pred:
+	successors_in_dom_tree: label_11
+label_11:
+	dom: main_init label_11
+	idom: main_init
+	dom_frontier:
+	cfg pred: main_init
+	successors_in_dom_tree: label_12
+label_12:
+	dom: main_init label_11 label_12
+	idom: label_11
+	dom_frontier: label_12
+	cfg pred: label_11 label_14
+	successors_in_dom_tree: label_13 label_15
+label_13:
+	dom: main_init label_11 label_12 label_13
+	idom: label_12
+	dom_frontier: label_12
+	cfg pred: label_12
+	successors_in_dom_tree: label_14
+label_14:
+	dom: main_init label_11 label_12 label_13 label_14
+	idom: label_13
+	dom_frontier: label_12
+	cfg pred: label_13
+	successors_in_dom_tree:
+label_15:
+	dom: main_init label_11 label_12 label_15
+	idom: label_12
+	dom_frontier:
+	cfg pred: label_12
+	successors_in_dom_tree: label_16
+label_16:
+	dom: main_init label_11 label_12 label_15 label_16
+	idom: label_15
+	dom_frontier: label_16
+	cfg pred: label_15 label_18
+	successors_in_dom_tree: label_17 label_19
+label_17:
+	dom: main_init label_11 label_12 label_15 label_16 label_17
+	idom: label_16
+	dom_frontier: label_16
+	cfg pred: label_16
+	successors_in_dom_tree: label_18
+label_18:
+	dom: main_init label_11 label_12 label_15 label_16 label_17 label_18
+	idom: label_17
+	dom_frontier: label_16
+	cfg pred: label_17
+	successors_in_dom_tree:
+label_19:
+	dom: main_init label_11 label_12 label_15 label_16 label_19
+	idom: label_16
+	dom_frontier:
+	cfg pred: label_16
+	successors_in_dom_tree:
+processing function partition
+totally allocating 45 nodes
+21
+spilled 0 nodes
+define i32 @partition(ptr %.var.local.1.a.val,i32 %.var.local.1.p.val,i32 %.var.local.1.r.val)
+{
+label_init_partition:
+br label %label_0
+label_0:
+$reg.17 = getelementptr i32, ptr $reg.10, i32 $reg.12
+$reg.17 = load i32, ptr $reg.17
+$reg.14 = sub i32 $reg.11, 1
+[Persudo] $reg.15 <-- 0
+br label %label_1
+label_1:
+$reg.16 = icmp slt i32 $reg.11, $reg.12
+br i1 $reg.16, label %label_2, label %label_4
+label_2:
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.11
+$reg.16 = load i32, ptr $reg.16
+$reg.16 = icmp sle i32 $reg.16, $reg.17
+br i1 $reg.16, label %label_5, label %label_6.phieliminate.0
+label_5:
+$reg.14 = add i32 $reg.14, 1
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.14
+$reg.15 = load i32, ptr $reg.16
+$reg.13 = getelementptr i32, ptr $reg.10, i32 $reg.14
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.11
+$reg.16 = load i32, ptr $reg.16
+store i32 $reg.16, ptr $reg.13
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.11
+store i32 $reg.15, ptr $reg.16
+br label %label_6
+label_6:
+br label %label_3
+label_3:
+$reg.11 = add i32 $reg.11, 1
+br label %label_1
+label_4:
+$reg.17 = add i32 $reg.14, 1
+$reg.17 = getelementptr i32, ptr $reg.10, i32 $reg.17
+$reg.17 = load i32, ptr $reg.17
+$reg.16 = add i32 $reg.14, 1
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.16
+$reg.15 = getelementptr i32, ptr $reg.10, i32 $reg.12
+$reg.15 = load i32, ptr $reg.15
+store i32 $reg.15, ptr $reg.16
+$reg.16 = getelementptr i32, ptr $reg.10, i32 $reg.12
+store i32 $reg.17, ptr $reg.16
+$reg.10 = add i32 $reg.14, 1
+ret i32 $reg.10
+label_6.phieliminate.0:
+br label %label_6
+}
+processing function quick_sort
+totally allocating 20 nodes
+5
+spilled 4 nodes
+define void @quick_sort(ptr %.var.local.6.a.val,i32 %.var.local.6.p.val,i32 %.var.local.6.r.val)
+{
+label_init_quick_sort:
+[Persudo] #0 <-- $reg.12
+[Persudo] #1 <-- $reg.11
+[Persudo] #2 <-- $reg.10
+br label %label_7
+label_7:
+$reg.17 = icmp sge i32 #1, #0
+br i1 $reg.17, label %label_8, label %label_9
+label_8:
+ret void
+label_9:
+[Persudo] $reg.10 <-- #2
+[Persudo] $reg.11 <-- #1
+[Persudo] $reg.12 <-- #0
+$reg.10 = call i32 @partition(ptr $reg.10, i32 $reg.11, i32 $reg.12)
+[Persudo] #0 <-- $reg.10
+$reg.12 = sub i32 #0, 1
+[Persudo] $reg.10 <-- #2
+[Persudo] $reg.11 <-- #1
+call void @quick_sort(ptr $reg.10, i32 $reg.11, i32 $reg.12)
+$reg.11 = add i32 #0, 1
+[Persudo] $reg.10 <-- #2
+[Persudo] $reg.12 <-- #0
+call void @quick_sort(ptr $reg.10, i32 $reg.11, i32 $reg.12)
+ret void
+}
+processing function quick_sort_inf
+totally allocating 16 nodes
+2
+spilled 2 nodes
+define void @quick_sort_inf(ptr %.var.local.8.a.val)
+{
+label_init_quick_sort_inf:
+[Persudo] #0 <-- $reg.10
+br label %label_10
+label_10:
+[Persudo] $reg.10 <-- #0
+$reg.10 = call i32 @.builtin.GetArrayLength(ptr $reg.10)
+[Persudo] #0 <-- $reg.10
+$reg.12 = sub i32 #0, 1
+[Persudo] $reg.10 <-- #0
+[Persudo] $reg.11 <-- 0
+call void @quick_sort(ptr $reg.10, i32 $reg.11, i32 $reg.12)
+ret void
+}
+processing function main
+totally allocating 29 nodes
+19
+spilled 5 nodes
+define i32 @main()
+{
+main_init:
+[Persudo] #0 <-- $reg.20
+[Persudo] #1 <-- $reg.18
+[Persudo] #2 <-- $reg.4
+[Persudo] #3 <-- $reg.3
+$reg.4 = alloca i32
+br label %label_11
+label_11:
+$reg.10 = call i32 @getInt()
+[Persudo] $reg.3 <-- $reg.10
+$reg.17 = getelementptr i32, ptr $reg.4, i32 0
+store i32 $reg.3, ptr $reg.17
+[Persudo] $reg.10 <-- 1
+[Persudo] $reg.11 <-- 4
+[Persudo] $reg.12 <-- $reg.4
+$reg.10 = call ptr @.builtin.RecursiveAllocateArray(i32 $reg.10, i32 $reg.11, ptr $reg.12)
+[Persudo] $reg.4 <-- $reg.10
+[Persudo] $reg.20 <-- 0
+br label %label_12
+label_12:
+$reg.17 = icmp slt i32 $reg.20, $reg.3
+br i1 $reg.17, label %label_13, label %label_15
+label_13:
+#0 = getelementptr i32, ptr $reg.4, i32 $reg.20
+$reg.10 = call i32 @getInt()
+[Persudo] $reg.18 <-- $reg.10
+store i32 $reg.18, ptr #0
+br label %label_14
+label_14:
+$reg.17 = add i32 $reg.20, 1
+[Persudo] $reg.20 <-- $reg.17
+br label %label_12
+label_15:
+[Persudo] $reg.10 <-- $reg.4
+call void @quick_sort_inf(ptr $reg.10)
+[Persudo] $reg.18 <-- 0
+br label %label_16
+label_16:
+$reg.17 = icmp slt i32 $reg.18, $reg.3
+br i1 $reg.17, label %label_17, label %label_19
+label_17:
+$reg.17 = getelementptr i32, ptr $reg.4, i32 $reg.18
+$reg.10 = load i32, ptr $reg.17
+$reg.10 = call ptr @toString(i32 $reg.10)
+[Persudo] $reg.20 <-- $reg.10
+[Persudo] $reg.10 <-- $reg.20
+[Persudo] $reg.11 <-- @.str.2
+$reg.10 = call ptr @.builtin.strcat(ptr $reg.10, ptr $reg.11)
+[Persudo] $reg.20 <-- $reg.10
+[Persudo] $reg.10 <-- $reg.20
+call void @print(ptr $reg.10)
+br label %label_18
+label_18:
+$reg.17 = add i32 $reg.18, 1
+[Persudo] $reg.18 <-- $reg.17
+br label %label_16
+label_19:
+[Persudo] $reg.10 <-- @.str.3
+call void @println(ptr $reg.10)
+[Persudo] $reg.3 <-- #3
+[Persudo] $reg.4 <-- #2
+[Persudo] $reg.18 <-- #1
+[Persudo] $reg.20 <-- #0
+[Persudo] $reg.10 <-- 0
+ret i32 $reg.10
+}

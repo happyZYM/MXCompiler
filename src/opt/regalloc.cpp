@@ -299,6 +299,34 @@ void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, C
     }
   }
 }
+
+void PairMoveEliminate(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, ConfGraph &confgraph) {
+  for (auto node : cfg.nodes) {
+    auto block = node->corresponding_block;
+    auto it = block->actions.begin();
+    while (it != block->actions.end()) {
+      while (it != block->actions.end() && !std::dynamic_pointer_cast<opt::MoveInstruct>(*it)) {
+        ++it;
+      }
+      if (it == block->actions.end()) break;
+      std::unordered_map<std::string, std::list<std::shared_ptr<ActionItem>>::iterator> defined_by;
+      do {
+        auto cur_move = std::dynamic_pointer_cast<opt::MoveInstruct>(*it);
+        if (defined_by.find(cur_move->src_full) != defined_by.end() &&
+            std::dynamic_pointer_cast<opt::MoveInstruct>(*defined_by[cur_move->src_full])->src_full ==
+                cur_move->dest_full) {
+          auto it_next = it;
+          ++it_next;
+          block->actions.erase(it);
+          it = it_next;
+        } else {
+          defined_by[cur_move->dest_full] = it;
+          ++it;
+        }
+      } while (it != block->actions.end() && std::dynamic_pointer_cast<opt::MoveInstruct>(*it));
+    }
+  }
+}
 void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   std::cerr << "processing function " << func->func_name_raw << std::endl;
   CFGType cfg;
@@ -314,6 +342,7 @@ void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
     confgraph = BuildConfGraph(cfg);
   } while (ConductColoring(func, cfg, confgraph));
   TranslateColorResult(func, cfg, confgraph);
+  // PairMoveEliminate(func, cfg, confgraph);
   func->RecursivePrint(std::cerr);
 }
 

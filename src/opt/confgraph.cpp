@@ -286,6 +286,7 @@ void Simplify(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &con
   confgraph.low_degree_and_not_move_related.erase(u);
   DetachNode(u, confgraph);
   confgraph.stack.push_back(u);
+  confgraph.awful_moves.clear();
 }
 
 void Coalesce(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph) {
@@ -324,8 +325,10 @@ void Coalesce(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &con
     }
     if (condition_satisfied) {
       MergeNodeInto(src_node, dest_node, confgraph);
+      confgraph.awful_moves.clear();
     } else {
       confgraph.potential_moves.insert(move);
+      confgraph.awful_moves.insert(move);
     }
   } else {
     // Briggs condition
@@ -342,8 +345,10 @@ void Coalesce(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &con
     }
     if (dangerous_neighbors.size() < kMaxRegs) {
       MergeNodeInto(src_node, dest_node, confgraph);
+      confgraph.awful_moves.clear();
     } else {
       confgraph.potential_moves.insert(move);
+      confgraph.awful_moves.insert(move);
     }
   }
 }
@@ -362,6 +367,7 @@ void PotentailSpill(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGrap
   confgraph.high_degree_nodes.erase(u);
   DetachNode(u, confgraph);
   confgraph.stack.push_back(u);
+  confgraph.awful_moves.clear();
 }
 
 void GraphCheck(ConfGraph &confgraph) {
@@ -457,6 +463,7 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
     // std::cerr << "confgraph.low_degree_and_move_related.size()=" << confgraph.low_degree_and_move_related.size()
     //           << std::endl;
     // std::cerr << "confgraph.high_degree_nodes.size()=" << confgraph.high_degree_nodes.size() << std::endl;
+    // std::cerr << "confgraph.potential_moves.size()=" << confgraph.potential_moves.size() << std::endl;
     // std::cerr << "pending moves" << std::endl;
     // for (auto mode : confgraph.pending_moves) {
     //   std::cerr << '\t';
@@ -469,7 +476,7 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
     //   mode->RecursivePrint(std::cerr);
     // }
     // std::cerr << std::endl;
-    GraphCheck(confgraph);
+    // GraphCheck(confgraph);
     for (auto node : confgraph.low_degree_and_not_move_related) {
       if (node->is_binded_with_physical_reg) {
         throw std::runtime_error("something strange happened: node is binded with physical reg");
@@ -494,6 +501,9 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
       if (confgraph.potential_moves.size() > 0) {
         std::vector<opt::MoveInstruct *> removed;
         for (auto move : confgraph.potential_moves) {
+          if (confgraph.awful_moves.find(move) != confgraph.awful_moves.end()) {
+            continue;
+          }
           auto src_node = confgraph.id_to_node[cfg.var_to_id[move->src_full]];
           auto dest_node = confgraph.id_to_node[cfg.var_to_id[move->dest_full]];
           src_node = ConfGraphNode::FindFather(src_node);
