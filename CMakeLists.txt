@@ -26,14 +26,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # 设置 Release 模式下开启优化
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(-Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2)
-        add_link_options(-fsanitize=address,undefined)
-    elseif(MSVC)
-        add_compile_options(/O2)
-    endif()
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Release")
+#     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+#         add_compile_options(-Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2)
+#         add_link_options(-fsanitize=address,undefined)
+#     elseif(MSVC)
+#         add_compile_options(/O2)
+#     endif()
+# endif()
 
 include(FetchContent)
 # FetchContent_Declare(
