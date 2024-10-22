@@ -33,6 +33,11 @@ ConfGraph BuildConfGraph(CFGType &cfg) {
       if (u == v) continue;
       u->neighbors.push_back(v);
       res.adj_table[u][v] = std::prev(u->neighbors.end());
+      // {
+      //   std::string u_name = cfg.id_to_var[u->var_ids.front()];
+      //   std::string v_name = cfg.id_to_var[v->var_ids.front()];
+      //   std::cerr << "edge between " << u_name << " and " << v_name << std::endl;
+      // }
     }
     u->neighbors.sort();
   }
@@ -44,7 +49,7 @@ ConfGraph BuildConfGraph(CFGType &cfg) {
     res.id_to_node[reg_id]->is_binded_with_physical_reg = true;
     res.id_to_node[reg_id]->color = std::stoi(reg.substr(1));
     // std::cerr << "coloring node whith id=" << reg_id << " with color=" << res.id_to_node[reg_id]->color << std::endl;
-    res.id_to_node[reg_id]->degree = ConfGraphNode::kInf;
+    // res.id_to_node[reg_id]->degree = ConfGraphNode::kInf;
   }
   for (auto cfg_node : cfg.nodes) {
     auto block = cfg_node->corresponding_block;
@@ -102,14 +107,16 @@ void InitializeBeforeColoring([[maybe_unused]] std::shared_ptr<FunctionDefItem> 
         // do nothing
       }
     }
-    if (confg_node->degree < kMaxRegs) {
-      if (confg_node->original_move_neighbors.size() == 0) {
-        confgraph.low_degree_and_not_move_related.insert(confg_node.get());
+    if (!confg_node->is_binded_with_physical_reg) {
+      if (confg_node->degree < kMaxRegs) {
+        if (confg_node->original_move_neighbors.size() == 0) {
+          confgraph.low_degree_and_not_move_related.insert(confg_node.get());
+        } else {
+          confgraph.low_degree_and_move_related.insert(confg_node.get());
+        }
       } else {
-        confgraph.low_degree_and_move_related.insert(confg_node.get());
+        confgraph.high_degree_nodes.insert(confg_node.get());
       }
-    } else if (!confg_node->is_binded_with_physical_reg) {
-      confgraph.high_degree_nodes.insert(confg_node.get());
     }
   }
 }
@@ -356,6 +363,68 @@ void PotentailSpill(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGrap
   DetachNode(u, confgraph);
   confgraph.stack.push_back(u);
 }
+
+void GraphCheck(ConfGraph &confgraph) {
+  for (auto node : confgraph.nodes) {
+    if (node->is_merged_into != node.get()) continue;
+    if (node->is_temporarily_removed) {
+      if (node->neighbors.size() > 0)
+        throw std::runtime_error("something strange happened: a temporarily removed node has neighbors");
+      if (node->neighbors_half_available.size() != confgraph.adj_table_half_available[node.get()].size()) {
+        throw std::runtime_error(
+            "something strange happened: "
+            "node->neighbors_half_available.size()!=confgraph.adj_table_half_available[node].size()");
+      }
+      for (auto neighbor : node->neighbors_half_available) {
+        if (confgraph.adj_table_half_available[neighbor].find(node.get()) ==
+            confgraph.adj_table_half_available[neighbor].end()) {
+          throw std::runtime_error(
+              "something strange happened: neighbor->neighbors_half_available does not contain node");
+        }
+      }
+      if (node->neighbors_not_available.size() != confgraph.adj_table_not_available[node.get()].size()) {
+        throw std::runtime_error(
+            "something strange happened: "
+            "node->neighbors_not_available.size()!=confgraph.adj_table_not_available[node].size()");
+      }
+      for (auto neighbor : node->neighbors_not_available) {
+        if (confgraph.adj_table_not_available[neighbor].find(node.get()) ==
+            confgraph.adj_table_not_available[neighbor].end()) {
+          throw std::runtime_error(
+              "something strange happened: neighbor->neighbors_not_available does not contain node");
+        }
+      }
+    } else {
+      if (node->neighbors_not_available.size() > 0) {
+        throw std::runtime_error("something strange happened: a node has neighbors_not_available");
+      }
+      if (node->neighbors.size() != confgraph.adj_table[node.get()].size()) {
+        throw std::runtime_error(
+            "something strange happened: node->neighbors.size()!=confgraph.adj_table[node].size()");
+      }
+      for (auto neighbor : node->neighbors) {
+        if (confgraph.adj_table[neighbor].find(node.get()) == confgraph.adj_table[neighbor].end()) {
+          throw std::runtime_error("something strange happened: neighbor->neighbors does not contain node");
+        }
+      }
+      if (node->neighbors_half_available.size() != confgraph.adj_table_half_available[node.get()].size()) {
+        throw std::runtime_error(
+            "something strange happened: "
+            "node->neighbors_half_available.size()!=confgraph.adj_table_half_available[node].size()");
+      }
+      for (auto neighbor : node->neighbors_half_available) {
+        if (confgraph.adj_table_half_available[neighbor].find(node.get()) ==
+            confgraph.adj_table_half_available[neighbor].end()) {
+          throw std::runtime_error(
+              "something strange happened: neighbor->neighbors_half_available does not contain node");
+        }
+      }
+      if (node->degree != node->neighbors.size()) {
+        throw std::runtime_error("something strange happened: node->degree!=node->neighbors.size()");
+      }
+    }
+  }
+}
 bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph) {
   if (cfg.id_to_var.size() != cfg.var_to_id.size()) {
     throw std::runtime_error("something strange happened: id_to_var and var_to_id do not match");
@@ -379,15 +448,28 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
       throw std::runtime_error("something strange happened: id_to_node[0]!=i");
   }
   InitializeBeforeColoring(src, cfg, confgraph);
+  size_t round_counter = 0;
   do {
-    // std::cerr << std::endl;
-    // std::cerr << "confgraph.low_degree_and_not_move_related.size()=" <<
-    // confgraph.low_degree_and_not_move_related.size()
+    // std::cerr << std::endl << "\n\na new round begins " << ++round_counter << std::endl;
+    // std::cerr << "confgraph.low_degree_and_not_move_related.size()=" << confgraph.low_degree_and_not_move_related.size()
     //           << std::endl;
     // std::cerr << "confgraph.pending_moves.size()=" << confgraph.pending_moves.size() << std::endl;
     // std::cerr << "confgraph.low_degree_and_move_related.size()=" << confgraph.low_degree_and_move_related.size()
     //           << std::endl;
     // std::cerr << "confgraph.high_degree_nodes.size()=" << confgraph.high_degree_nodes.size() << std::endl;
+    // std::cerr << "pending moves" << std::endl;
+    // for (auto mode : confgraph.pending_moves) {
+    //   std::cerr << '\t';
+    //   mode->RecursivePrint(std::cerr);
+    // }
+    // std::cerr << std::endl;
+    // std::cerr << "potential moves" << std::endl;
+    // for (auto mode : confgraph.potential_moves) {
+    //   std::cerr << '\t';
+    //   mode->RecursivePrint(std::cerr);
+    // }
+    // std::cerr << std::endl;
+    GraphCheck(confgraph);
     for (auto node : confgraph.low_degree_and_not_move_related) {
       if (node->is_binded_with_physical_reg) {
         throw std::runtime_error("something strange happened: node is binded with physical reg");

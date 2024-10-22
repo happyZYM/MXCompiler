@@ -68,7 +68,7 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
           new_move->src_full = src_val;
           new_move->dest_full = phi_act->result_full;
           new_move->ty = phi_act->ty;
-          cur_block->actions.push_back(new_move);
+          src_block->actions.push_back(new_move);
         }
       }
     }

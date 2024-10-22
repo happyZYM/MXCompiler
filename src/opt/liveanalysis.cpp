@@ -303,8 +303,8 @@ void ActionLevelTracking(CFGType &cfg, CFGNodeType *node) {
         GetCollectionsDifference(node->action_out_active_vars[it->get()], node->action_def_vars[it->get()]));
     auto tmp = node->action_in_active_vars[it->get()];
     --it;
-    if (it == node->corresponding_block->actions.begin()) break;
     node->action_out_active_vars[it->get()] = tmp;
+    if (it == node->corresponding_block->actions.begin()) break;
   }
 }
 
