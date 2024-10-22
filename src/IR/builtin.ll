@@ -7,15 +7,14 @@ target triple = "riscv32-unknown-unknown-elf"
 @.str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
 @.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @.str.3 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@.str.4 = private unnamed_addr constant [3 x i8] c"%c\00", align 1
 
 ; Function Attrs: nofree nounwind memory(write, argmem: read, inaccessiblemem: readwrite)
 define dso_local noalias noundef ptr @.builtin.strcat(ptr nocapture noundef readonly %0, ptr nocapture noundef readonly %1) local_unnamed_addr #0 {
-  %3 = tail call i32 @strlen(ptr noundef nonnull dereferenceable(1) %0) #12
-  %4 = tail call i32 @strlen(ptr noundef nonnull dereferenceable(1) %1) #12
+  %3 = tail call i32 @strlen(ptr noundef nonnull dereferenceable(1) %0) #11
+  %4 = tail call i32 @strlen(ptr noundef nonnull dereferenceable(1) %1) #11
   %5 = add nsw i32 %4, %3
   %6 = add nsw i32 %5, 1
-  %7 = tail call ptr @malloc(i32 noundef %6) #13
+  %7 = tail call ptr @malloc(i32 noundef %6) #12
   %8 = icmp sgt i32 %3, 0
   br i1 %8, label %12, label %9
 
@@ -82,7 +81,7 @@ define dso_local i32 @string.length(ptr nocapture noundef readonly %0) local_unn
 define dso_local noalias noundef ptr @string.substring(ptr nocapture noundef readonly %0, i32 noundef %1, i32 noundef %2) local_unnamed_addr #0 {
   %4 = sub nsw i32 %2, %1
   %5 = add nsw i32 %4, 1
-  %6 = tail call ptr @malloc(i32 noundef %5) #13
+  %6 = tail call ptr @malloc(i32 noundef %5) #12
   %7 = getelementptr i8, ptr %0, i32 %1
   %8 = icmp sgt i32 %4, 0
   br i1 %8, label %11, label %9
@@ -106,10 +105,10 @@ define dso_local noalias noundef ptr @string.substring(ptr nocapture noundef rea
 ; Function Attrs: nofree nounwind
 define dso_local i32 @string.parseInt(ptr nocapture noundef readonly %0) local_unnamed_addr #5 {
   %2 = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(i64 4, ptr nonnull %2) #14
-  %3 = call i32 (ptr, ptr, ...) @sscanf(ptr noundef %0, ptr noundef nonnull @.str, ptr noundef nonnull %2) #12
+  call void @llvm.lifetime.start.p0(i64 4, ptr nonnull %2) #13
+  %3 = call i32 (ptr, ptr, ...) @sscanf(ptr noundef %0, ptr noundef nonnull @.str, ptr noundef nonnull %2) #11
   %4 = load i32, ptr %2, align 4, !tbaa !14
-  call void @llvm.lifetime.end.p0(i64 4, ptr nonnull %2) #14
+  call void @llvm.lifetime.end.p0(i64 4, ptr nonnull %2) #13
   ret i32 %4
 }
 
@@ -126,7 +125,7 @@ define dso_local i32 @string.ord(ptr nocapture noundef readonly %0, i32 noundef 
 
 ; Function Attrs: nounwind
 define dso_local void @print(ptr noundef %0) local_unnamed_addr #7 {
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.1, ptr noundef %0) #15
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.1, ptr noundef %0) #14
   ret void
 }
 
@@ -134,138 +133,55 @@ declare dso_local i32 @printf(ptr noundef, ...) local_unnamed_addr #8
 
 ; Function Attrs: nounwind
 define dso_local void @println(ptr noundef %0) local_unnamed_addr #7 {
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.2, ptr noundef %0) #15
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.2, ptr noundef %0) #14
   ret void
 }
 
 ; Function Attrs: nounwind
 define dso_local void @printInt(i32 noundef %0) local_unnamed_addr #7 {
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str, i32 noundef %0) #15
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str, i32 noundef %0) #14
   ret void
 }
 
 ; Function Attrs: nounwind
 define dso_local void @printlnInt(i32 noundef %0) local_unnamed_addr #7 {
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.3, i32 noundef %0) #15
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @.str.3, i32 noundef %0) #14
   ret void
 }
 
 ; Function Attrs: nofree nounwind
 define dso_local noalias noundef ptr @toString(i32 noundef %0) local_unnamed_addr #5 {
-  %2 = tail call dereferenceable_or_null(15) ptr @malloc(i32 noundef 15) #13
-  %3 = tail call i32 (ptr, ptr, ...) @sprintf(ptr noundef nonnull dereferenceable(1) %2, ptr noundef nonnull dereferenceable(1) @.str, i32 noundef %0) #12
+  %2 = tail call dereferenceable_or_null(15) ptr @malloc(i32 noundef 15) #12
+  %3 = tail call i32 (ptr, ptr, ...) @sprintf(ptr noundef nonnull dereferenceable(1) %2, ptr noundef nonnull dereferenceable(1) @.str, i32 noundef %0) #11
   ret ptr %2
 }
 
 ; Function Attrs: nofree nounwind
 declare dso_local noundef i32 @sprintf(ptr noalias nocapture noundef writeonly, ptr nocapture noundef readonly, ...) local_unnamed_addr #5
 
-; Function Attrs: nounwind
-define dso_local noalias ptr @getString() local_unnamed_addr #7 {
-  %1 = alloca i8, align 1
-  %2 = tail call dereferenceable_or_null(11) ptr @malloc(i32 noundef 11) #13
-  call void @llvm.lifetime.start.p0(i64 1, ptr nonnull %1) #14
-  %3 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str.4, ptr noundef nonnull %1) #12
-  %4 = icmp eq i32 %3, 1
-  br i1 %4, label %5, label %45
-
-5:                                                ; preds = %0, %37
-  %6 = phi ptr [ %40, %37 ], [ %2, %0 ]
-  %7 = phi i1 [ false, %37 ], [ true, %0 ]
-  %8 = phi i32 [ %41, %37 ], [ 0, %0 ]
-  %9 = phi i32 [ %39, %37 ], [ 10, %0 ]
-  %10 = load i8, ptr %1, align 1
-  switch i8 %10, label %20 [
-    i8 13, label %11
-    i8 10, label %11
-  ]
-
-11:                                               ; preds = %5, %5
-  br i1 %7, label %12, label %45
-
-12:                                               ; preds = %11
-  %13 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str.4, ptr noundef nonnull %1) #12
-  %14 = icmp eq i32 %13, 1
-  br i1 %14, label %15, label %45
-
-15:                                               ; preds = %12, %17
-  %16 = load i8, ptr %1, align 1
-  switch i8 %16, label %20 [
-    i8 13, label %17
-    i8 10, label %17
-  ]
-
-17:                                               ; preds = %15, %15
-  %18 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str.4, ptr noundef nonnull %1) #12
-  %19 = icmp eq i32 %18, 1
-  br i1 %19, label %15, label %45
-
-20:                                               ; preds = %15, %5
-  %21 = phi i8 [ %10, %5 ], [ %16, %15 ]
-  %22 = icmp eq i32 %8, %9
-  br i1 %22, label %23, label %37
-
-23:                                               ; preds = %20
-  %24 = shl nsw i32 %9, 1
-  %25 = or disjoint i32 %24, 1
-  %26 = call ptr @malloc(i32 noundef %25) #13
-  %27 = icmp sgt i32 %9, 0
-  br i1 %27, label %30, label %28
-
-28:                                               ; preds = %30, %23
-  call void @free(ptr noundef %6) #12
-  %29 = load i8, ptr %1, align 1, !tbaa !6
-  br label %37
-
-30:                                               ; preds = %23, %30
-  %31 = phi i32 [ %35, %30 ], [ 0, %23 ]
-  %32 = getelementptr inbounds i8, ptr %6, i32 %31
-  %33 = load i8, ptr %32, align 1, !tbaa !6
-  %34 = getelementptr inbounds i8, ptr %26, i32 %31
-  store i8 %33, ptr %34, align 1, !tbaa !6
-  %35 = add nuw nsw i32 %31, 1
-  %36 = icmp eq i32 %35, %9
-  br i1 %36, label %28, label %30, !llvm.loop !16
-
-37:                                               ; preds = %28, %20
-  %38 = phi i8 [ %29, %28 ], [ %21, %20 ]
-  %39 = phi i32 [ %24, %28 ], [ %9, %20 ]
-  %40 = phi ptr [ %26, %28 ], [ %6, %20 ]
-  %41 = add nuw nsw i32 %8, 1
-  %42 = getelementptr inbounds i8, ptr %40, i32 %8
-  store i8 %38, ptr %42, align 1, !tbaa !6
-  %43 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str.4, ptr noundef nonnull %1) #12
-  %44 = icmp eq i32 %43, 1
-  br i1 %44, label %5, label %45, !llvm.loop !17
-
-45:                                               ; preds = %37, %11, %12, %17, %0
-  %46 = phi i32 [ 0, %0 ], [ %8, %17 ], [ %8, %11 ], [ %41, %37 ], [ %8, %12 ]
-  %47 = phi ptr [ %2, %0 ], [ %6, %17 ], [ %6, %11 ], [ %40, %37 ], [ %6, %12 ]
-  %48 = getelementptr inbounds i8, ptr %47, i32 %46
-  store i8 0, ptr %48, align 1, !tbaa !6
-  call void @llvm.lifetime.end.p0(i64 1, ptr nonnull %1) #14
-  ret ptr %47
+; Function Attrs: nofree nounwind
+define dso_local noundef ptr @getString() local_unnamed_addr #5 {
+  %1 = tail call dereferenceable_or_null(1024) ptr @malloc(i32 noundef 1024) #12
+  %2 = tail call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str.1, ptr noundef %1) #11
+  ret ptr %1
 }
 
 ; Function Attrs: nofree nounwind
 declare dso_local noundef i32 @scanf(ptr nocapture noundef readonly, ...) local_unnamed_addr #5
 
-; Function Attrs: mustprogress nounwind willreturn allockind("free") memory(argmem: readwrite, inaccessiblemem: readwrite)
-declare dso_local void @free(ptr allocptr nocapture noundef) local_unnamed_addr #9
-
 ; Function Attrs: nofree nounwind
 define dso_local i32 @getInt() local_unnamed_addr #5 {
   %1 = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(i64 4, ptr nonnull %1) #14
-  %2 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str, ptr noundef nonnull %1) #12
+  call void @llvm.lifetime.start.p0(i64 4, ptr nonnull %1) #13
+  %2 = call i32 (ptr, ...) @scanf(ptr noundef nonnull @.str, ptr noundef nonnull %1) #11
   %3 = load i32, ptr %1, align 4, !tbaa !14
-  call void @llvm.lifetime.end.p0(i64 4, ptr nonnull %1) #14
+  call void @llvm.lifetime.end.p0(i64 4, ptr nonnull %1) #13
   ret i32 %3
 }
 
 ; Function Attrs: mustprogress nofree nounwind willreturn memory(inaccessiblemem: readwrite)
-define dso_local noalias noundef ptr @.builtin.AllocateClassBody(i32 noundef %0) local_unnamed_addr #10 {
-  %2 = tail call ptr @malloc(i32 noundef %0) #13
+define dso_local noalias noundef ptr @.builtin.AllocateClassBody(i32 noundef %0) local_unnamed_addr #9 {
+  %2 = tail call ptr @malloc(i32 noundef %0) #12
   ret ptr %2
 }
 
@@ -308,7 +224,7 @@ define dso_local noalias nonnull ptr @.builtin.RecursiveAllocateArray(i32 nounde
 13:                                               ; preds = %3
   %14 = mul nsw i32 %5, %1
   %15 = add nsw i32 %14, 4
-  %16 = tail call ptr @malloc(i32 noundef %15) #13
+  %16 = tail call ptr @malloc(i32 noundef %15) #12
   store i8 %6, ptr %16, align 1, !tbaa !6
   %17 = getelementptr inbounds i8, ptr %16, i32 1
   store i8 %8, ptr %17, align 1, !tbaa !6
@@ -322,7 +238,7 @@ define dso_local noalias nonnull ptr @.builtin.RecursiveAllocateArray(i32 nounde
 21:                                               ; preds = %3
   %22 = shl i32 %5, 2
   %23 = add i32 %22, 4
-  %24 = tail call ptr @malloc(i32 noundef %23) #13
+  %24 = tail call ptr @malloc(i32 noundef %23) #12
   store i8 %6, ptr %24, align 1, !tbaa !6
   %25 = getelementptr inbounds i8, ptr %24, i32 1
   store i8 %8, ptr %25, align 1, !tbaa !6
@@ -341,13 +257,13 @@ define dso_local noalias nonnull ptr @.builtin.RecursiveAllocateArray(i32 nounde
 
 33:                                               ; preds = %30, %33
   %34 = phi i32 [ 0, %30 ], [ %37, %33 ]
-  %35 = tail call ptr @.builtin.RecursiveAllocateArray(i32 noundef %31, i32 noundef %1, ptr noundef nonnull %32) #12
+  %35 = tail call ptr @.builtin.RecursiveAllocateArray(i32 noundef %31, i32 noundef %1, ptr noundef nonnull %32) #11
   %36 = getelementptr inbounds ptr, ptr %28, i32 %34
-  store ptr %35, ptr %36, align 4, !tbaa !18
+  store ptr %35, ptr %36, align 4, !tbaa !16
   %37 = add nuw nsw i32 %34, 1
   %38 = load i32, ptr %2, align 4, !tbaa !14
   %39 = icmp slt i32 %37, %38
-  br i1 %39, label %33, label %40, !llvm.loop !20
+  br i1 %39, label %33, label %40, !llvm.loop !18
 
 40:                                               ; preds = %33, %21, %13
   %41 = phi ptr [ %20, %13 ], [ %28, %21 ], [ %28, %33 ]
@@ -355,10 +271,10 @@ define dso_local noalias nonnull ptr @.builtin.RecursiveAllocateArray(i32 nounde
 }
 
 ; Function Attrs: mustprogress nofree nounwind willreturn memory(write, argmem: none, inaccessiblemem: readwrite)
-define dso_local noalias nonnull ptr @.builtin.AllocateArray(i32 noundef %0, i32 noundef %1) local_unnamed_addr #11 {
+define dso_local noalias nonnull ptr @.builtin.AllocateArray(i32 noundef %0, i32 noundef %1) local_unnamed_addr #10 {
   %3 = mul nsw i32 %1, %0
   %4 = add nsw i32 %3, 4
-  %5 = tail call ptr @malloc(i32 noundef %4) #13
+  %5 = tail call ptr @malloc(i32 noundef %4) #12
   %6 = trunc i32 %1 to i8
   store i8 %6, ptr %5, align 1, !tbaa !6
   %7 = lshr i32 %1, 8
@@ -386,13 +302,12 @@ attributes #5 = { nofree nounwind "no-builtin-memcpy" "no-builtin-printf" "no-tr
 attributes #6 = { mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read) "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
 attributes #7 = { nounwind "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
 attributes #8 = { "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
-attributes #9 = { mustprogress nounwind willreturn allockind("free") memory(argmem: readwrite, inaccessiblemem: readwrite) "alloc-family"="malloc" "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
-attributes #10 = { mustprogress nofree nounwind willreturn memory(inaccessiblemem: readwrite) "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
-attributes #11 = { mustprogress nofree nounwind willreturn memory(write, argmem: none, inaccessiblemem: readwrite) "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
-attributes #12 = { "no-builtin-memcpy" "no-builtin-printf" }
-attributes #13 = { allocsize(0) "no-builtin-memcpy" "no-builtin-printf" }
-attributes #14 = { nounwind }
-attributes #15 = { nobuiltin nounwind "no-builtin-memcpy" "no-builtin-printf" }
+attributes #9 = { mustprogress nofree nounwind willreturn memory(inaccessiblemem: readwrite) "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
+attributes #10 = { mustprogress nofree nounwind willreturn memory(write, argmem: none, inaccessiblemem: readwrite) "no-builtin-memcpy" "no-builtin-printf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="generic-rv32" "target-features"="+32bit,+a,+c,+m,+relax,-d,-e,-experimental-zacas,-experimental-zcmop,-experimental-zfbfmin,-experimental-zicfilp,-experimental-zicfiss,-experimental-zimop,-experimental-ztso,-experimental-zvfbfmin,-experimental-zvfbfwma,-f,-h,-smaia,-smepmp,-ssaia,-svinval,-svnapot,-svpbmt,-v,-xcvalu,-xcvbi,-xcvbitmanip,-xcvelw,-xcvmac,-xcvmem,-xcvsimd,-xsfvcp,-xsfvfnrclipxfqf,-xsfvfwmaccqqq,-xsfvqmaccdod,-xsfvqmaccqoq,-xtheadba,-xtheadbb,-xtheadbs,-xtheadcmo,-xtheadcondmov,-xtheadfmemidx,-xtheadmac,-xtheadmemidx,-xtheadmempair,-xtheadsync,-xtheadvdot,-xventanacondops,-za128rs,-za64rs,-zawrs,-zba,-zbb,-zbc,-zbkb,-zbkc,-zbkx,-zbs,-zca,-zcb,-zcd,-zce,-zcf,-zcmp,-zcmt,-zdinx,-zfa,-zfh,-zfhmin,-zfinx,-zhinx,-zhinxmin,-zic64b,-zicbom,-zicbop,-zicboz,-ziccamoa,-ziccif,-zicclsm,-ziccrse,-zicntr,-zicond,-zicsr,-zifencei,-zihintntl,-zihintpause,-zihpm,-zk,-zkn,-zknd,-zkne,-zknh,-zkr,-zks,-zksed,-zksh,-zkt,-zmmul,-zvbb,-zvbc,-zve32f,-zve32x,-zve64d,-zve64f,-zve64x,-zvfh,-zvfhmin,-zvkb,-zvkg,-zvkn,-zvknc,-zvkned,-zvkng,-zvknha,-zvknhb,-zvks,-zvksc,-zvksed,-zvksg,-zvksh,-zvkt,-zvl1024b,-zvl128b,-zvl16384b,-zvl2048b,-zvl256b,-zvl32768b,-zvl32b,-zvl4096b,-zvl512b,-zvl64b,-zvl65536b,-zvl8192b" }
+attributes #11 = { "no-builtin-memcpy" "no-builtin-printf" }
+attributes #12 = { allocsize(0) "no-builtin-memcpy" "no-builtin-printf" }
+attributes #13 = { nounwind }
+attributes #14 = { nobuiltin nounwind "no-builtin-memcpy" "no-builtin-printf" }
 
 !llvm.module.flags = !{!0, !1, !2, !4}
 !llvm.ident = !{!5}
@@ -413,8 +328,6 @@ attributes #15 = { nobuiltin nounwind "no-builtin-memcpy" "no-builtin-printf" }
 !13 = distinct !{!13, !10}
 !14 = !{!15, !15, i64 0}
 !15 = !{!"int", !7, i64 0}
-!16 = distinct !{!16, !10}
-!17 = distinct !{!17, !10}
-!18 = !{!19, !19, i64 0}
-!19 = !{!"any pointer", !7, i64 0}
-!20 = distinct !{!20, !10}
+!16 = !{!17, !17, i64 0}
+!17 = !{!"any pointer", !7, i64 0}
+!18 = distinct !{!18, !10}

@@ -65,30 +65,33 @@ char* toString(int n) {
   return res;
 }
 char* getString() { // same as getline
-  char *res=(char*)malloc(11);
-  int allocated_length = 10;
-  int cur_length = 0;
-  char ch;
-  char started=0;
-  while(scanf("%c",&ch)==1) {
-    if(ch=='\n'||ch=='\r') {
-      if(started) break;
-      else continue;
-    }
-    started=1;
-    if(cur_length==allocated_length) {
-      char *new_res = (char*)malloc(allocated_length*2+1);
-      for(int i=0;i<allocated_length;i++) {
-        new_res[i] = res[i];
-      }
-      free(res);
-      res = new_res;
-      allocated_length *= 2;
-    }
-    res[cur_length++] = ch;
-  }
-  res[cur_length] = '\0';
+  char *res=(char*)malloc(1024);
+  scanf("%s", res);
   return res;
+  // char *res=(char*)malloc(11);
+  // int allocated_length = 10;
+  // int cur_length = 0;
+  // char ch;
+  // char started=0;
+  // while(scanf("%c",&ch)==1) {
+  //   if(ch=='\n'||ch=='\r') {
+  //     if(started) break;
+  //     else continue;
+  //   }
+  //   started=1;
+  //   if(cur_length==allocated_length) {
+  //     char *new_res = (char*)malloc(allocated_length*2+1);
+  //     for(int i=0;i<allocated_length;i++) {
+  //       new_res[i] = res[i];
+  //     }
+  //     free(res);
+  //     res = new_res;
+  //     allocated_length *= 2;
+  //   }
+  //   res[cur_length++] = ch;
+  // }
+  // res[cur_length] = '\0';
+  // return res;
 }
 int getInt() {
   int res;

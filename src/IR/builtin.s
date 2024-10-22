@@ -262,118 +262,20 @@ toString:                               # @toString
 	.type	getString,@function
 getString:                              # @getString
 # %bb.0:
-	addi	sp, sp, -48
-	sw	ra, 44(sp)                      # 4-byte Folded Spill
-	sw	s0, 40(sp)                      # 4-byte Folded Spill
-	sw	s1, 36(sp)                      # 4-byte Folded Spill
-	sw	s2, 32(sp)                      # 4-byte Folded Spill
-	sw	s3, 28(sp)                      # 4-byte Folded Spill
-	sw	s4, 24(sp)                      # 4-byte Folded Spill
-	sw	s5, 20(sp)                      # 4-byte Folded Spill
-	sw	s6, 16(sp)                      # 4-byte Folded Spill
-	sw	s7, 12(sp)                      # 4-byte Folded Spill
-	sw	s8, 8(sp)                       # 4-byte Folded Spill
-	sw	s9, 4(sp)                       # 4-byte Folded Spill
-	li	a0, 11
+	addi	sp, sp, -16
+	sw	ra, 12(sp)                      # 4-byte Folded Spill
+	sw	s0, 8(sp)                       # 4-byte Folded Spill
+	li	a0, 1024
 	call	malloc
-	mv	s3, a0
-	lui	a0, %hi(.builtin_L.str.4)
-	addi	s0, a0, %lo(.builtin_L.str.4)
-	addi	a1, sp, 3
-	mv	a0, s0
+	mv	s0, a0
+	lui	a0, %hi(.builtin_L.str.1)
+	addi	a0, a0, %lo(.builtin_L.str.1)
+	mv	a1, s0
 	call	scanf
-	li	s9, 1
-	bne	a0, s9, .LBB10_15
-# %bb.1:                                # %.preheader4
-	li	s6, 0
-	li	s4, 10
-	li	s5, 13
-	mv	s2, s3
-	li	a1, 1
-	li	s7, 10
-.LBB10_2:                               # =>This Loop Header: Depth=1
-                                        #     Child Loop BB10_5 Depth 2
-                                        #     Child Loop BB10_11 Depth 2
-	lbu	a0, 3(sp)
-	beq	a0, s5, .LBB10_4
-# %bb.3:                                #   in Loop: Header=BB10_2 Depth=1
-	bne	a0, s4, .LBB10_8
-.LBB10_4:                               #   in Loop: Header=BB10_2 Depth=1
-	andi	a1, a1, 1
-	beqz	a1, .LBB10_16
-.LBB10_5:                               #   Parent Loop BB10_2 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	addi	a1, sp, 3
 	mv	a0, s0
-	call	scanf
-	bne	a0, s9, .LBB10_16
-# %bb.6:                                #   in Loop: Header=BB10_5 Depth=2
-	lbu	a0, 3(sp)
-	beq	a0, s5, .LBB10_5
-# %bb.7:                                #   in Loop: Header=BB10_5 Depth=2
-	beq	a0, s4, .LBB10_5
-.LBB10_8:                               #   in Loop: Header=BB10_2 Depth=1
-	bne	s6, s7, .LBB10_13
-# %bb.9:                                #   in Loop: Header=BB10_2 Depth=1
-	slli	s8, s7, 1
-	addi	a0, s8, 1
-	call	malloc
-	mv	s3, a0
-	blez	s7, .LBB10_12
-# %bb.10:                               # %.preheader
-                                        #   in Loop: Header=BB10_2 Depth=1
-	add	s7, s7, s3
-	mv	a0, s2
-	mv	a1, s3
-.LBB10_11:                              #   Parent Loop BB10_2 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	lbu	a2, 0(a0)
-	sb	a2, 0(a1)
-	addi	a1, a1, 1
-	addi	a0, a0, 1
-	bne	a1, s7, .LBB10_11
-.LBB10_12:                              #   in Loop: Header=BB10_2 Depth=1
-	mv	a0, s2
-	call	free
-	lbu	a0, 3(sp)
-	mv	s2, s3
-	mv	s7, s8
-	j	.LBB10_14
-.LBB10_13:                              #   in Loop: Header=BB10_2 Depth=1
-	mv	s3, s2
-.LBB10_14:                              #   in Loop: Header=BB10_2 Depth=1
-	addi	s1, s6, 1
-	add	s6, s6, s3
-	sb	a0, 0(s6)
-	addi	a1, sp, 3
-	mv	a0, s0
-	call	scanf
-	li	a1, 0
-	mv	s6, s1
-	beq	a0, s9, .LBB10_2
-	j	.LBB10_17
-.LBB10_15:
-	li	s1, 0
-	j	.LBB10_17
-.LBB10_16:
-	mv	s1, s6
-	mv	s3, s2
-.LBB10_17:
-	add	s1, s1, s3
-	sb	zero, 0(s1)
-	mv	a0, s3
-	lw	ra, 44(sp)                      # 4-byte Folded Reload
-	lw	s0, 40(sp)                      # 4-byte Folded Reload
-	lw	s1, 36(sp)                      # 4-byte Folded Reload
-	lw	s2, 32(sp)                      # 4-byte Folded Reload
-	lw	s3, 28(sp)                      # 4-byte Folded Reload
-	lw	s4, 24(sp)                      # 4-byte Folded Reload
-	lw	s5, 20(sp)                      # 4-byte Folded Reload
-	lw	s6, 16(sp)                      # 4-byte Folded Reload
-	lw	s7, 12(sp)                      # 4-byte Folded Reload
-	lw	s8, 8(sp)                       # 4-byte Folded Reload
-	lw	s9, 4(sp)                       # 4-byte Folded Reload
-	addi	sp, sp, 48
+	lw	ra, 12(sp)                      # 4-byte Folded Reload
+	lw	s0, 8(sp)                       # 4-byte Folded Reload
+	addi	sp, sp, 16
 	ret
 .builtin_Lfunc_end10:
 	.size	getString, .builtin_Lfunc_end10-getString
@@ -565,11 +467,6 @@ getInt:                                 # @getInt
 .builtin_L.str.3:
 	.asciz	"%d\n"
 	.size	.builtin_L.str.3, 4
-
-	.type	.builtin_L.str.4,@object                # @.str.4
-.builtin_L.str.4:
-	.asciz	"%c"
-	.size	.builtin_L.str.4, 3
 
 	.ident	"Ubuntu clang version 18.1.8 (++20240731024944+3b5b5c1ec4a3-1~exp1~20240731145000.144)"
 	.section	".note.GNU-stack","",@progbits
