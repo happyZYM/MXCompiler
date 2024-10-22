@@ -5,6 +5,18 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "cfg.h"
+ConfGraph BuildConfGraph(CFGType &cfg);
+void InitializeBeforeColoring([[maybe_unused]] std::shared_ptr<FunctionDefItem> src, [[maybe_unused]] CFGType &cfg,
+                              ConfGraph &confgraph);
+void DetachNode(ConfGraphNode *node, ConfGraph &confgraph);
+void JoinNode(ConfGraphNode *node, ConfGraph &confgraph);
+void MergeNodeInto(ConfGraphNode *node, ConfGraphNode *target, ConfGraph &confgraph);
+void Simplify(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
+void Coalesce(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
+void Freeze(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
+void PotentailSpill(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
+void GraphCheck(ConfGraph &confgraph);
+bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph);
 ConfGraph BuildConfGraph(CFGType &cfg) {
   std::unordered_map<ConfGraphNode *, std::unordered_set<ConfGraphNode *>> edges;
   ConfGraph res;

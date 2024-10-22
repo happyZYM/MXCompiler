@@ -3,7 +3,10 @@
 #include <queue>
 #include "IR/IR_basic.h"
 #include "cfg.h"
-
+void BuildDomForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFGType &cfg);
+void DFSReplace(CFGNodeType *cur_node, std::unordered_map<std::string, size_t> &var_to_version,
+                std::unordered_map<std::string, std::stack<std::string>> &var_to_name_stk);
+void ConductMem2RegForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFGType &cfg);
 void BuildDomForFunction(const std::shared_ptr<FunctionDefItem> &func, const CFGType &cfg) {
   bool all_dom_unchanged;
   CFGNodeCollection all_nodes;

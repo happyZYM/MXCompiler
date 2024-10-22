@@ -5,7 +5,11 @@
 #include "liveanalysis.h"
 #include "phieliminate.h"
 #include "tools.h"
-
+void EnforcePhysicalRegs(CFGType &cfg);
+void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, ConfGraph &confgraph);
+void PairMoveEliminate(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, ConfGraph &confgraph);
+void RemoveCallingConventionKeeper(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, ConfGraph &confgraph);
+void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func);
 void EnforcePhysicalRegs(CFGType &cfg) {
   using namespace opt;
   // process callee side

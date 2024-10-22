@@ -3,7 +3,7 @@
 #include "IR/IR_basic.h"
 
 using namespace opt;
-
+void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGType &cfg);
 void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGType &cfg) {
   size_t new_block_cnt = 0;
   for (auto cur_node : cfg.nodes) {

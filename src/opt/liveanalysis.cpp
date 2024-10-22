@@ -6,6 +6,13 @@
 #include "tools.h"
 
 using namespace opt;
+void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordered_map<std::string, size_t> &var_to_id);
+void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_to_var,
+                   std::unordered_map<std::string, size_t> &var_to_id);
+void BlockLevelTracking(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_to_var,
+                        [[maybe_unused]] std::unordered_map<std::string, size_t> &var_to_id);
+void ActionLevelTracking(CFGType &cfg, CFGNodeType *node);
+void LiveAnalysis(CFGType &cfg);
 void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordered_map<std::string, size_t> &var_to_id) {
   auto TryAddVar = [&](const std::string &var) {
     if (var_to_id.find(var) == var_to_id.end()) {
