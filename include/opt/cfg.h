@@ -173,6 +173,6 @@ const static std::vector<std::string> allocating_regs = {"x3",  "x4",  "x9",  "x
                                                          "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17"};
 
 inline bool VRegCheck(const std::string &s) {
-  if (s[0] != '%') return false;
+  if (s[0] != '%' && s[0] != '$' && s[0] != '#') return false;
   return true;
 }

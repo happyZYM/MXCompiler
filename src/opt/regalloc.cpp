@@ -154,12 +154,12 @@ void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, C
       var = "$reg." + std::to_string(confnode->color);
     }
   };
+  func->spilled_vars = 0;
   for (auto node : cfg.nodes) {
     auto block = node->corresponding_block;
     std::vector<size_t> cur_node_use;
     std::vector<size_t> cur_node_def;
     bool use_def_init = false;
-    func->spilled_vars = 0;
     for (auto act : block->actions) {
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
         if (var_to_id.find(br_act->cond) != var_to_id.end()) {
@@ -284,11 +284,12 @@ void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, C
         if (move_act->src_full == move_act->dest_full) {
           need_remove = true;
         }
-      } else if (auto force_def_act = std::dynamic_pointer_cast<ForceDef>(*act_it)) {
-        need_remove = true;
-      } else if (auto force_use_act = std::dynamic_pointer_cast<ForceUse>(*act_it)) {
-        need_remove = true;
       }
+      // else if (auto force_def_act = std::dynamic_pointer_cast<ForceDef>(*act_it)) {
+      //   need_remove = true;
+      // } else if (auto force_use_act = std::dynamic_pointer_cast<ForceUse>(*act_it)) {
+      //   need_remove = true;
+      // }
       if (need_remove) {
         auto it_next = act_it;
         ++it_next;
@@ -327,6 +328,22 @@ void PairMoveEliminate(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, Conf
     }
   }
 }
+
+void RemoveCallingConventionKeeper(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, ConfGraph &confgraph) {
+  for (auto node : cfg.nodes) {
+    auto block = node->corresponding_block;
+    std::vector<std::list<std::shared_ptr<ActionItem>>::iterator> act_to_move;
+    for (auto it = block->actions.begin(); it != block->actions.end(); ++it) {
+      if (std::dynamic_pointer_cast<opt::ForceDef>(*it) || std::dynamic_pointer_cast<opt::ForceUse>(*it)) {
+        act_to_move.push_back(it);
+      }
+    }
+    for (auto it : act_to_move) {
+      block->actions.erase(it);
+    }
+  }
+}
+
 void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   std::cerr << "processing function " << func->func_name_raw << std::endl;
   CFGType cfg;
@@ -342,7 +359,7 @@ void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
     confgraph = BuildConfGraph(cfg);
   } while (ConductColoring(func, cfg, confgraph));
   TranslateColorResult(func, cfg, confgraph);
-  // PairMoveEliminate(func, cfg, confgraph);
+  RemoveCallingConventionKeeper(func, cfg, confgraph);
   func->RecursivePrint(std::cerr);
 }
 

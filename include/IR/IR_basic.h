@@ -47,12 +47,10 @@ class TypeDefItem : public LLVMIRItemBase {
   }
 };
 class GlobalVarDefItem : public LLVMIRItemBase {
-  friend class IRBuilder;
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
+ public:
   LLVMType type;
   std::string name_raw;
 
- public:
   GlobalVarDefItem() = default;
   void RecursivePrint(std::ostream &os) const {
     std::string name_full = "@.var.global." + name_raw + ".addrkp";
@@ -449,9 +447,7 @@ class FunctionDeclareItem : public LLVMIRItemBase {
   }
 };
 class ConstStrItem : public LLVMIRItemBase {
-  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
-  friend void GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend class IRBuilder;
+ public:
   std::string string_raw;
   size_t const_str_id;
   static std::string Escape(const std::string &src) {
@@ -474,7 +470,6 @@ class ConstStrItem : public LLVMIRItemBase {
     return ss.str();
   }
 
- public:
   ConstStrItem() = default;
   void RecursivePrint(std::ostream &os) const {
     os << "@.str." << const_str_id << " = private unnamed_addr constant [" << string_raw.size() + 1 << " x i8] c\""

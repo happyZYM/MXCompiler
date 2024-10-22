@@ -54,8 +54,6 @@ class RISCVGlobalVarItem : public RISCVAsmItemBase {
   }
 };
 class RISCVFuncItem : public RISCVAsmItemBase {
-  friend void ::GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-
  public:
   std::string full_label;
   std::vector<std::string> code_lines;
@@ -93,20 +91,12 @@ class RISCVProgItem : public RISCVAsmItemBase {
   }
 };
 class FuncLayout {
-  friend void ::GenerateNaiveASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
-  friend void GenerateReadAccess(std::string val, size_t bytes, std::string output_reg, FuncLayout &layout,
-                                 std::vector<std::string> &code_lines);
-  friend void GenerateWriteAccess(std::string val, size_t bytes, std::string data_reg, FuncLayout &layout,
-                                  std::vector<std::string> &code_lines);
-  friend void NaiveBackend::GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines,
-                                        FuncLayout &layout,
-                                        const std::unordered_map<std::string, IRClassInfo> &low_level_class_info,
-                                        bool process_phi);
+ public:
   std::unordered_map<std::string, size_t> local_items;
   std::unordered_map<std::string, size_t> arg_offset;
   size_t cur_pos;
   size_t total_frame_size;  // should align to 16 bytes
- public:
+
   FuncLayout() : cur_pos(8), total_frame_size(16) {}
   void AllocateItem(const std::string &name, size_t sz, size_t num = 1) {
     if (local_items.find(name) != local_items.end()) throw std::runtime_error("Local item already exists");
