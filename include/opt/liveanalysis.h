@@ -35,6 +35,7 @@ class StoreSpilledArgs : public ActionItem {
   size_t arg_id;  // [8,+inf)
   std::string var_full;
   LLVMType ty;
+  size_t move_sp_down;
   StoreSpilledArgs() = default;
   void RecursivePrint(std::ostream &os) const {
     os << "[Persudo] store spilled args " << var_full << "with id=" << arg_id << "\n";

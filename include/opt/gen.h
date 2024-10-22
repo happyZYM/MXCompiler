@@ -160,6 +160,8 @@ inline void FetchValueToReg(std::string original_val, std::string &out_reg, Func
     // immediate value
     out_reg = AllocateTmpReg(available_tmp_regs);
     StoreImmToReg(std::stoi(original_val), out_reg, code_lines);
+  } else if (original_val == "null") {
+    out_reg = "x0";
   } else {
     throw std::runtime_error("Unknown value type");
   }
@@ -412,6 +414,10 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
   } else if (auto call_act = std::dynamic_pointer_cast<CallItem>(act)) {
     // no need to to further process, as callling convention is handled in reg alloc
     code_lines.push_back("call " + call_act->func_name_raw);
+    if (call_act->move_sp_up) {
+      size_t delta = 4 * call_act->move_sp_up;
+      code_lines.push_back("addi sp, sp, " + std::to_string(delta));
+    }
   } else if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(act)) {
     throw std::runtime_error("Phi should not be in the layout");
   } else if (auto select_act = std::dynamic_pointer_cast<SelectItem>(act)) {
@@ -440,9 +446,30 @@ inline void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string
       WriteToSpilledVar(select_act->result_full, res_reg, layout, code_lines, available_tmp_regs);
     }
   } else if (auto load_spilled_args_act = std::dynamic_pointer_cast<opt::LoadSpilledArgs>(act)) {
-    throw std::runtime_error("Not implemented");
+    std::string res_reg;
+    bool need_extra_store = false;
+    if (load_spilled_args_act->var_full[0] == '$') {
+      res_reg = ExtractRegName(load_spilled_args_act->var_full);
+    } else if (load_spilled_args_act->var_full[0] == '#') {
+      need_extra_store = true;
+      res_reg = AllocateTmpReg(available_tmp_regs);
+    } else {
+      throw std::runtime_error("Unknown result type");
+    }
+    size_t offset = 4 * (load_spilled_args_act->arg_id - 8);
+    code_lines.push_back("lw " + res_reg + ", " + std::to_string(offset) + "(s0)");
+    if (need_extra_store) {
+      WriteToSpilledVar(load_spilled_args_act->var_full, res_reg, layout, code_lines, available_tmp_regs);
+    }
   } else if (auto store_spilled_args_act = std::dynamic_pointer_cast<opt::StoreSpilledArgs>(act)) {
-    throw std::runtime_error("Not implemented");
+    if (store_spilled_args_act->move_sp_down) {
+      size_t delta = 4 * store_spilled_args_act->move_sp_down;
+      code_lines.push_back("addi sp, sp, -" + std::to_string(delta));
+    }
+    std::string val_reg;
+    FetchValueToReg(store_spilled_args_act->var_full, val_reg, layout, code_lines, available_tmp_regs);
+    size_t offset = 4 * (store_spilled_args_act->arg_id - 8);
+    code_lines.push_back("sw " + val_reg + ", " + std::to_string(offset) + "(sp)");
   } else if (auto move_act = std::dynamic_pointer_cast<opt::MoveInstruct>(act)) {
     std::string src_reg;
     FetchValueToReg(move_act->src_full, src_reg, layout, code_lines, available_tmp_regs);

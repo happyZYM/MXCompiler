@@ -100,15 +100,23 @@ void EnforcePhysicalRegs(CFGType &cfg) {
         caller_saved_regs_to_process.erase(arg_regs[i]);
       }
       if (call_act->args_val_full.size() > 8) {
-        for (size_t i = 8; i < call_act->args_val_full.size(); i++) {
+        for (size_t i = call_act->args_val_full.size() - 1; i >= 8; i--) {
           auto new_store = std::make_shared<StoreSpilledArgs>();
           new_store->arg_id = i;
           new_store->var_full = call_act->args_val_full[i];
           new_store->ty = call_act->args_ty[i];
           block->actions.insert(it_act, new_store);
+          if (i == call_act->args_val_full.size() - 1) {
+            new_store->move_sp_down = call_act->args_val_full.size() - 8;
+          } else {
+            new_store->move_sp_down = 0;
+          }
         }
+        call_act->move_sp_up = call_act->args_val_full.size() - 8;
         call_act->args_val_full.resize(8);
         call_act->args_ty.resize(8);
+      } else {
+        call_act->move_sp_up = 0;
       }
       for (auto reg : caller_saved_regs_to_process) {
         auto new_def = std::make_shared<ForceDef>();

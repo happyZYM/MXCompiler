@@ -269,6 +269,8 @@ class CallItem : public ActionItem {
   std::vector<LLVMType> args_ty;
   std::vector<std::string> args_val_full;
 
+  size_t move_sp_up;
+
   CallItem() = default;
   void RecursivePrint(std::ostream &os) const {
     if (std::holds_alternative<LLVMVOIDType>(return_type)) {
