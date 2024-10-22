@@ -1,6 +1,8 @@
 #include "phieliminate.h"
+#include <cstdarg>
 #include <stdexcept>
 #include "IR/IR_basic.h"
+#include "cfg.h"
 
 using namespace opt;
 void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGType &cfg);
@@ -73,6 +75,34 @@ void ConductPhiEliminateForFunction(std::shared_ptr<FunctionDefItem> func, CFGTy
       }
     }
     cur_block->phi_map.clear();
+  }
+  size_t move_tmp_counter = 0;
+  for (auto cur_node : cfg.nodes) {
+    auto cur_block = cur_node->corresponding_block;
+    if (cur_block->actions.size() == 0) continue;
+    std::list<MoveInstruct *> suffix_moves;
+    auto it = cur_block->actions.end();
+    while (it != cur_block->actions.begin()) {
+      --it;
+      if (std::dynamic_pointer_cast<MoveInstruct>(*it)) {
+        suffix_moves.push_front(dynamic_cast<MoveInstruct *>(it->get()));
+      } else {
+        break;
+      }
+    }
+    std::unordered_map<std::string, MoveInstruct *> value_decided_by;
+    for (auto move : suffix_moves) {
+      if (value_decided_by.find(move->src_full) != value_decided_by.end()) {
+        auto new_move = std::make_shared<MoveInstruct>();
+        new_move->dest_full = value_decided_by[move->src_full]->dest_full;
+        new_move->ty = value_decided_by[move->src_full]->ty;
+        std::string tmp_var_name = "%movetmp." + std::to_string(move_tmp_counter++);
+        new_move->src_full = tmp_var_name;
+        value_decided_by[move->src_full]->dest_full = tmp_var_name;
+        cur_block->actions.push_back(new_move);
+      }
+      value_decided_by[move->dest_full] = move;
+    }
   }
 }
 
