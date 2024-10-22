@@ -1,7 +1,8 @@
 #include "cfg.h"
+#include <queue>
 #include <string>
 
-CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func) {
+CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func, bool remove_poison_entry) {
   CFGType res;
   if (func->init_block) {
     res.label_to_block[func->init_block->label_full] = func->init_block.get();
@@ -39,5 +40,35 @@ CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func) {
     }
   }
   res.corresponding_func = func.get();
+  bool need_rebuild = false;
+  if (remove_poison_entry) {
+    auto tmp = func->basic_blocks;
+    func->basic_blocks.clear();
+    std::queue<CFGNodeType *> Q;
+    std::unordered_set<CFGNodeType *> visited;
+    Q.push(res.entry);
+    visited.insert(res.entry);
+    while (Q.size() > 0) {
+      auto cur = Q.front();
+      Q.pop();
+      for (auto succ : cur->successors) {
+        if (visited.find(succ) == visited.end()) {
+          visited.insert(succ);
+          Q.push(succ);
+        }
+      }
+    }
+    for (auto block : tmp) {
+      auto node = res.block_to_node[block.get()];
+      if (visited.find(node) == visited.end()) {
+        need_rebuild = true;
+        continue;
+      }
+      func->basic_blocks.push_back(block);
+    }
+  }
+  if (need_rebuild) {
+    res = BuildCFGForFunction(func, false);
+  }
   return res;
 }

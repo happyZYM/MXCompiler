@@ -137,6 +137,7 @@ class IRClassInfo {
     alread_arranged = true;
     size_t cur_pos = 0;
     size_t align_size = 1;
+    class_size_after_align = 0;
     for (size_t cur_size : member_var_size) {
       if (cur_size != 1 && cur_size != 4) throw std::runtime_error("Invalid member variable size");
       if (cur_pos % cur_size == 0) {

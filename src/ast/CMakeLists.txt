@@ -1,6 +1,6 @@
 include_directories(${CMAKE_SOURCE_DIR}/include/ast)
 file(GLOB AST_SOURCES "*.cpp")
-add_library(ast STATIC ${AST_SOURCES})
+add_library(ast SHARED ${AST_SOURCES})
 target_include_directories(ast PUBLIC /usr/include/antlr4-runtime/)
 target_include_directories(ast PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../semantic/antlr-generated)
 target_link_libraries(ast PUBLIC antlr4-runtime)

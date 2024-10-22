@@ -45,11 +45,13 @@ int main(int argc, char **argv) {
     if (!optimize_all) {
       GenerateNaiveASM(fout, IR);
     } else {
+      // IR->RecursivePrint(std::cerr);
       auto IR_with_out_allocas = Mem2Reg(IR);
-      // IR_with_out_allocas->RecursivePrint(fout);
+      // IR_with_out_allocas->RecursivePrint(std::cerr);
       auto IR_with_out_phis = PhiEliminate(IR_with_out_allocas);
-      // IR_with_out_phis->RecursivePrint(fout);
+      // IR_with_out_phis->RecursivePrint(std::cerr);
       auto alloced_code = RegAlloc(IR_with_out_phis);
+      // alloced_code->RecursivePrint(std::cerr);
       OptBackend::GenerateOptASM(fout, alloced_code);
     }
   } catch (const SemanticError &err) {

@@ -57,6 +57,8 @@ ConfGraph BuildConfGraph(CFGType &cfg) {
       if (auto move_act = std::dynamic_pointer_cast<opt::MoveInstruct>(act)) {
         if (!VRegCheck(move_act->src_full)) continue;
         if (cfg.var_to_id.find(move_act->src_full) == cfg.var_to_id.end()) {
+          move_act->src_full = "0";
+          continue;
           move_act->RecursivePrint(std::cerr);
           std::cerr << std::endl;
           throw std::runtime_error("move_act->src_full not found in var_to_id");
@@ -457,7 +459,8 @@ bool ConductColoring(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGra
   size_t round_counter = 0;
   do {
     // std::cerr << std::endl << "\n\na new round begins " << ++round_counter << std::endl;
-    // std::cerr << "confgraph.low_degree_and_not_move_related.size()=" << confgraph.low_degree_and_not_move_related.size()
+    // std::cerr << "confgraph.low_degree_and_not_move_related.size()=" <<
+    // confgraph.low_degree_and_not_move_related.size()
     //           << std::endl;
     // std::cerr << "confgraph.pending_moves.size()=" << confgraph.pending_moves.size() << std::endl;
     // std::cerr << "confgraph.low_degree_and_move_related.size()=" << confgraph.low_degree_and_move_related.size()

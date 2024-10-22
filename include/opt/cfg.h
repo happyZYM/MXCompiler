@@ -158,7 +158,7 @@ bool GetCollectionsIsSame(const Container &a, const Container &b, Compare comp =
   return ita == a.end() && itb == b.end();
 }
 
-CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func);
+CFGType BuildCFGForFunction(const std::shared_ptr<FunctionDefItem> &func, bool remove_poison_entry = false);
 
 // RISC-V calling convention compatible
 const static std::vector<std::string> held_tmp_regs = {"x28", "x29", "x30", "x31"};

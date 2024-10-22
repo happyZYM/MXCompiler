@@ -368,7 +368,7 @@ void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   } while (ConductColoring(func, cfg, confgraph));
   TranslateColorResult(func, cfg, confgraph);
   RemoveCallingConventionKeeper(func, cfg, confgraph);
-  func->RecursivePrint(std::cerr);
+  // func->RecursivePrint(std::cerr);
 }
 
 std::shared_ptr<ModuleItem> RegAlloc(std::shared_ptr<ModuleItem> src) {

@@ -1180,6 +1180,7 @@ void IRBuilder::ActuralVisit(ThisExpr_ASTNode *node) {
 }
 
 void IRBuilder::ActuralVisit(ParenExpr_ASTNode *node) {
+  node->expr->is_requiring_lvalue = node->is_requiring_lvalue;
   node->expr->accept(this);  // just visit it
   node->IR_result_full = node->expr->IR_result_full;
 }

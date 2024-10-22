@@ -36,13 +36,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL_HASH SHA256=1f357c27ca988c3f7c6b4bf68a9395005ac6761f034046e9dde0896e3aba00e4
-  URL ${CMAKE_SOURCE_DIR}/deps/googletest-v1.14.0-mirror.zip
-)
-FetchContent_MakeAvailable(googletest)
-include(GoogleTest)
+# FetchContent_Declare(
+#   googletest
+#   URL_HASH SHA256=1f357c27ca988c3f7c6b4bf68a9395005ac6761f034046e9dde0896e3aba00e4
+#   URL ${CMAKE_SOURCE_DIR}/deps/googletest-v1.14.0-mirror.zip
+# )
+# FetchContent_MakeAvailable(googletest)
+# include(GoogleTest)
 FetchContent_Declare(
   argparse
   URL_HASH SHA256=cd07c1208c01bef28c5173f4bad0b2df73dd7316d2f56fc80344952c400fa711
