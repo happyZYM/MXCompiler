@@ -88,10 +88,7 @@ struct FunctionSchema {
   std::vector<std::pair<ExprTypeInfo, std::string>> arguments;
 };
 class FunctionScope : public ScopeBase {
-  friend std::shared_ptr<class Program_ASTNode> CheckAndDecorate(std::shared_ptr<class Program_ASTNode> src);
-  friend class Visitor;
-  friend class ASTSemanticCheckVisitor;
-  friend class GlobalScope;
+ public:
   FunctionSchema schema;
   bool add_variable([[maybe_unused]] const std::string &name, [[maybe_unused]] const ExprTypeInfo &type) override {
     throw std::runtime_error("FunctionScope does not support add_variable");
@@ -132,9 +129,7 @@ class FunctionScope : public ScopeBase {
   }
 };
 class ClassDefScope : public ScopeBase {
-  friend class Visitor;
-  friend class GlobalScope;
-  friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
+ public:
   std::unordered_map<std::string, ExprTypeInfo> member_variables;
   std::unordered_map<std::string, std::shared_ptr<FunctionScope>> member_functions;
   IRClassInfo llvm_class_info;

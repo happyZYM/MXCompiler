@@ -20,7 +20,7 @@ class LLVMIRItemBase {
 };
 
 class TypeDefItem : public LLVMIRItemBase {
-  friend class IRBuilder;
+ public:
   std::string class_name_raw;
   std::vector<LLVMType> elements;
 
@@ -411,8 +411,7 @@ class FunctionDefItem : public LLVMIRItemBase {
   }
 };
 class FunctionDeclareItem : public LLVMIRItemBase {
-  friend class IRBuilder;
-  friend std::shared_ptr<class ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+ public:
   LLVMType return_type;
   std::string func_name_raw;
   std::vector<LLVMType> args;

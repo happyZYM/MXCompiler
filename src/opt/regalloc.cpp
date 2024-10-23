@@ -372,6 +372,7 @@ void ConductRegAllocForFunction(std::shared_ptr<FunctionDefItem> func) {
   } while (ConductColoring(func, cfg, confgraph));
   TranslateColorResult(func, cfg, confgraph);
   RemoveCallingConventionKeeper(func, cfg, confgraph);
+  PairMoveEliminate(func, cfg, confgraph);
   // func->RecursivePrint(std::cerr);
 }
 

@@ -8,7 +8,7 @@
 #include "ast/scope.hpp"
 #include "tools.h"
 class IRBuilder : public ASTNodeVirturalVisitor {
-  friend std::shared_ptr<ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
+ public:
   std::shared_ptr<ModuleItem> prog;
   std::shared_ptr<TypeDefItem> cur_class;
   std::shared_ptr<FunctionDefItem> cur_func;

@@ -6,6 +6,7 @@
 #include "structural_astnode.h"
 
 class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
+ public:
   bool is_in_func_def;
   bool has_return;
   FunctionSchema cur_func_schema;
@@ -13,7 +14,6 @@ class ASTSemanticCheckVisitor : public ASTNodeVirturalVisitor {
   bool is_in_class_def;
   size_t loop_level;
   std::shared_ptr<GlobalScope> global_scope;
-  friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
 
   bool ClassExists(const std::string &name) {
     if (name == "int" || name == "bool") return true;

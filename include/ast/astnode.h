@@ -8,11 +8,7 @@
 #include "tools.h"
 
 class ASTNodeBase {
-  friend Visitor;
-  friend std::shared_ptr<Program_ASTNode> CheckAndDecorate(std::shared_ptr<Program_ASTNode> src);
-  friend std::shared_ptr<class ModuleItem> BuildIR(std::shared_ptr<Program_ASTNode> src);
-
- protected:
+ public:
   std::shared_ptr<ScopeBase> current_scope;
   ASTNodeType type;
   // std::vector<std::shared_ptr<ASTNodeBase>> children;
