@@ -53,6 +53,15 @@ void ConductDCEForFunction(std::shared_ptr<FunctionDefItem> func) {
         block->actions.push_back(act);
       }
     }
+    std::vector<std::string> phi_to_remove;
+    for (auto [key, phi_act] : block->phi_map) {
+      if (phi_act->marked_as_useless) {
+        phi_to_remove.push_back(key);
+      }
+    }
+    for (auto key : phi_to_remove) {
+      block->phi_map.erase(key);
+    }
   }
 }
 std::shared_ptr<ModuleItem> DCE(std::shared_ptr<ModuleItem> src) {
