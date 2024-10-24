@@ -119,8 +119,6 @@ inline void StoreImmToReg(int imm, std::string reg, std::vector<std::string> &co
 
 void GenerateOptASM(std::ostream &os, std::shared_ptr<ModuleItem> prog);
 
-extern std::string cur_block_label_for_phi;
-
 std::string AllocateTmpReg(std::vector<std::string> &available_tmp_regs);
 
 std::string ExtractRegName(const std::string &raw);
