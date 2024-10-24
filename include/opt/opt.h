@@ -3,3 +3,4 @@
 #include "global_var_cache.h"
 #include "mem2reg.h"
 #include "regalloc.h"
+#include "dce.h"

@@ -64,7 +64,11 @@ class GlobalVarDefItem : public LLVMIRItemBase {
     }
   }
 };
-class ActionItem : public LLVMIRItemBase {};
+class ActionItem : public LLVMIRItemBase {
+ public:
+  bool marked_as_useless;
+  ActionItem() : marked_as_useless(false) {}
+};
 class JMPActionItem : public ActionItem {
  public:
   std::shared_ptr<class PhiItem> corresponding_phi;

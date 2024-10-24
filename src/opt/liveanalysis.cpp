@@ -22,6 +22,9 @@ void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordere
   };
   for (auto node : cfg.nodes) {
     auto block = node->corresponding_block;
+    for (auto [_, phi_act] : block->phi_map) {
+      TryAddVar(phi_act->result_full);
+    }
     for (auto act : block->actions) {
       if (auto bin_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
         TryAddVar(bin_act->result_full);
@@ -46,6 +49,8 @@ void VarCollect(CFGType &cfg, std::vector<std::string> &id_to_var, std::unordere
         TryAddVar(load_spilled_args_act->var_full);
       } else if (auto alloca_act = std::dynamic_pointer_cast<AllocaAction>(act)) {
         TryAddVar(alloca_act->name_full);
+      } else if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(act)) {
+        TryAddVar(phi_act->result_full);
       }
     }
   }
@@ -63,6 +68,47 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
     std::vector<size_t> cur_node_use;
     std::vector<size_t> cur_node_def;
     bool use_def_init = false;
+    for (auto [_, phi_act] : block->phi_map) {
+      std::vector<size_t> &cur_act_use = node->action_use_vars[phi_act.get()];
+      std::vector<size_t> &cur_act_def = node->action_def_vars[phi_act.get()];
+      if (var_to_id.find(phi_act->result_full) != var_to_id.end()) {
+        cur_act_def.push_back(var_to_id[phi_act->result_full]);
+      }
+      std::unordered_set<size_t> cur_act_use_tmp;
+      for (auto &[value, _] : phi_act->values) {
+        if (var_to_id.find(value) != var_to_id.end()) {
+          // cur_act_use.push_back(var_to_id[value]);
+          cur_act_use_tmp.insert(var_to_id[value]);
+        }
+      }
+      for (size_t i : cur_act_use_tmp) {
+        cur_act_use.push_back(i);
+      }
+      std::sort(cur_act_use.begin(), cur_act_use.end());
+      std::sort(cur_act_def.begin(), cur_act_def.end());
+      for (size_t i = 1; i < cur_act_use.size(); i++) {
+        if (cur_act_use[i] == cur_act_use[i - 1]) {
+          throw std::runtime_error("use variable appears twice in one action");
+        }
+      }
+      for (size_t i = 1; i < cur_act_def.size(); i++) {
+        if (cur_act_def[i] == cur_act_def[i - 1]) {
+          throw std::runtime_error("def variable appears twice in one action");
+        }
+      }
+      if (!use_def_init) {
+        use_def_init = true;
+        cur_node_use = cur_act_use;
+        cur_node_def = cur_act_def;
+      } else {
+        const auto &use_p = cur_node_use;
+        const auto &def_p = cur_node_def;
+        const auto &use_n = cur_act_use;
+        const auto &def_n = cur_act_def;
+        cur_node_use = GetCollectionsUnion(use_p, GetCollectionsDifference(use_n, def_p));
+        cur_node_def = GetCollectionsUnion(def_p, def_n);
+      }
+    }
     for (auto act : block->actions) {
       std::vector<size_t> &cur_act_use = node->action_use_vars[act.get()];
       std::vector<size_t> &cur_act_def = node->action_def_vars[act.get()];
@@ -182,6 +228,20 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
         }
       } else if (auto alloca_act = std::dynamic_pointer_cast<AllocaAction>(act)) {
         cur_act_def.push_back(var_to_id[alloca_act->name_full]);
+      } else if (auto phi_act = std::dynamic_pointer_cast<PhiItem>(act)) {
+        if (var_to_id.find(phi_act->result_full) != var_to_id.end()) {
+          cur_act_def.push_back(var_to_id[phi_act->result_full]);
+        }
+        std::unordered_set<size_t> cur_act_use_tmp;
+        for (auto &[value, _] : phi_act->values) {
+          if (var_to_id.find(value) != var_to_id.end()) {
+            // cur_act_use.push_back(var_to_id[value]);
+            cur_act_use_tmp.insert(var_to_id[value]);
+          }
+        }
+        for (size_t i : cur_act_use_tmp) {
+          cur_act_use.push_back(i);
+        }
       }
       std::sort(cur_act_use.begin(), cur_act_use.end());
       std::sort(cur_act_def.begin(), cur_act_def.end());
