@@ -119,7 +119,7 @@ void GenerateOptASM(std::ostream &os, std::shared_ptr<ModuleItem> prog) {
       func_asm->code_lines.push_back("sw ra, -4(x31)");
       func_asm->code_lines.push_back("sw s0, -8(x31)");
       func_asm->code_lines.push_back("sw x31, -12(x31)");
-      func_asm->code_lines.push_back("mv s0, t0");
+      func_asm->code_lines.push_back("mv s0, x31");
     }
     if (func_def->init_block) {
       func_asm->code_lines.push_back(".entrylabel." + func_def->init_block->label_full + ":");
