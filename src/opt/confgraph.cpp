@@ -300,6 +300,11 @@ void MergeNodeInto(ConfGraphNode *node, ConfGraphNode *target, ConfGraph &confgr
 
 void Simplify(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph) {
   auto u = *(confgraph.low_degree_and_not_move_related.begin());
+  for (auto v : confgraph.low_degree_and_not_move_related) {
+    if (v->degree > u->degree) {
+      u = v;
+    }
+  }
   confgraph.low_degree_and_not_move_related.erase(u);
   DetachNode(u, confgraph);
   confgraph.stack.push_back(u);
@@ -381,6 +386,11 @@ void Freeze(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confg
 
 void PotentailSpill(std::shared_ptr<FunctionDefItem> src, CFGType &cfg, ConfGraph &confgraph) {
   auto u = *confgraph.high_degree_nodes.begin();
+  for (auto v : confgraph.high_degree_nodes) {
+    if (v->degree > u->degree) {
+      u = v;
+    }
+  }
   confgraph.high_degree_nodes.erase(u);
   DetachNode(u, confgraph);
   confgraph.stack.push_back(u);
