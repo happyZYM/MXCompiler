@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
       auto IR_with_out_allocas = Mem2Reg(IR);
       // IR_with_out_allocas->RecursivePrint(std::cerr);
       IR_with_out_allocas = GloabalVarCache(IR_with_out_allocas);
+      IR_with_out_allocas = GenerateBetterBR(IR_with_out_allocas);
       IR_with_out_allocas = DCE(IR_with_out_allocas);
       // IR_with_out_allocas->RecursivePrint(std::cerr);
       auto IR_with_out_phis = PhiEliminate(IR_with_out_allocas);

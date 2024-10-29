@@ -71,10 +71,36 @@ void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code
                  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info) {
   std::vector<std::string> available_tmp_regs = held_tmp_regs;
   if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
-    std::string cond_reg;
-    FetchValueToReg(br_act->cond, cond_reg, layout, code_lines, available_tmp_regs);
-    code_lines.push_back("bnez " + cond_reg + ", .entrylabel." + br_act->true_label_full);
-    code_lines.push_back("j .entrylabel." + br_act->false_label_full);
+    if (auto beq_act = std::dynamic_pointer_cast<BEQAction>(br_act)) {
+      std::string rs1_reg, rs2_reg;
+      FetchValueToReg(beq_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
+      FetchValueToReg(beq_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
+      code_lines.push_back("beq " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + beq_act->true_label_full);
+      code_lines.push_back("j .entrylabel." + beq_act->false_label_full);
+    } else if (auto bne_act = std::dynamic_pointer_cast<BNEAction>(br_act)) {
+      std::string rs1_reg, rs2_reg;
+      FetchValueToReg(bne_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
+      FetchValueToReg(bne_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
+      code_lines.push_back("bne " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bne_act->true_label_full);
+      code_lines.push_back("j .entrylabel." + bne_act->false_label_full);
+    } else if (auto blt_act = std::dynamic_pointer_cast<BLTAction>(br_act)) {
+      std::string rs1_reg, rs2_reg;
+      FetchValueToReg(blt_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
+      FetchValueToReg(blt_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
+      code_lines.push_back("blt " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + blt_act->true_label_full);
+      code_lines.push_back("j .entrylabel." + blt_act->false_label_full);
+    } else if (auto bge_act = std::dynamic_pointer_cast<BGEAction>(br_act)) {
+      std::string rs1_reg, rs2_reg;
+      FetchValueToReg(bge_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
+      FetchValueToReg(bge_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
+      code_lines.push_back("bge " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bge_act->true_label_full);
+      code_lines.push_back("j .entrylabel." + bge_act->false_label_full);
+    } else {
+      std::string cond_reg;
+      FetchValueToReg(br_act->cond, cond_reg, layout, code_lines, available_tmp_regs);
+      code_lines.push_back("bnez " + cond_reg + ", .entrylabel." + br_act->true_label_full);
+      code_lines.push_back("j .entrylabel." + br_act->false_label_full);
+    }
   } else if (auto jmp_act = std::dynamic_pointer_cast<UNConditionJMPAction>(act)) {
     code_lines.push_back("j .entrylabel." + jmp_act->label_full);
   } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {

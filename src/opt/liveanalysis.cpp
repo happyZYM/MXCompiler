@@ -113,13 +113,9 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
       std::vector<size_t> &cur_act_use = node->action_use_vars[act.get()];
       std::vector<size_t> &cur_act_def = node->action_def_vars[act.get()];
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
-        if (var_to_id.find(br_act->cond) != var_to_id.end()) {
-          cur_act_use.push_back(var_to_id[br_act->cond]);
-        }
+        throw std::runtime_error("BRAction should not appear in action list");
       } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {
-        if (!std::holds_alternative<LLVMVOIDType>(ret_act->type) && var_to_id.find(ret_act->value) != var_to_id.end()) {
-          cur_act_use.push_back(var_to_id[ret_act->value]);
-        }
+        throw std::runtime_error("RETAction should not appear in action list");
       } else if (auto bin_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
         if (var_to_id.find(bin_act->operand1_full) != var_to_id.end()) {
           cur_act_use.push_back(var_to_id[bin_act->operand1_full]);
@@ -273,14 +269,46 @@ void UseDefCollect(CFGType &cfg, [[maybe_unused]] std::vector<std::string> &id_t
       std::vector<size_t> &cur_act_use = node->action_use_vars[act.get()];
       std::vector<size_t> &cur_act_def = node->action_def_vars[act.get()];
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
-        if (var_to_id.find(br_act->cond) != var_to_id.end()) {
-          cur_act_use.push_back(var_to_id[br_act->cond]);
+        if (auto beq_act = std::dynamic_pointer_cast<BEQAction>(br_act)) {
+          if (var_to_id.find(beq_act->rs1) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[beq_act->rs1]);
+          }
+          if (beq_act->rs1 != beq_act->rs2 && var_to_id.find(beq_act->rs2) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[beq_act->rs2]);
+          }
+        } else if (auto bne_act = std::dynamic_pointer_cast<BNEAction>(br_act)) {
+          if (var_to_id.find(bne_act->rs1) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[bne_act->rs1]);
+          }
+          if (bne_act->rs1 != bne_act->rs2 && var_to_id.find(bne_act->rs2) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[bne_act->rs2]);
+          }
+        } else if (auto blt_act = std::dynamic_pointer_cast<BLTAction>(br_act)) {
+          if (var_to_id.find(blt_act->rs1) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[blt_act->rs1]);
+          }
+          if (blt_act->rs1 != blt_act->rs2 && var_to_id.find(blt_act->rs2) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[blt_act->rs2]);
+          }
+        } else if (auto bge_act = std::dynamic_pointer_cast<BGEAction>(br_act)) {
+          if (var_to_id.find(bge_act->rs1) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[bge_act->rs1]);
+          }
+          if (bge_act->rs1 != bge_act->rs2 && var_to_id.find(bge_act->rs2) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[bge_act->rs2]);
+          }
+        } else {
+          if (var_to_id.find(br_act->cond) != var_to_id.end()) {
+            cur_act_use.push_back(var_to_id[br_act->cond]);
+          }
         }
       } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {
         if (!std::holds_alternative<LLVMVOIDType>(ret_act->type) && var_to_id.find(ret_act->value) != var_to_id.end()) {
           cur_act_use.push_back(var_to_id[ret_act->value]);
         }
       }
+      std::sort(cur_act_use.begin(), cur_act_use.end());
+      std::sort(cur_act_def.begin(), cur_act_def.end());
       if (!use_def_init) {
         use_def_init = true;
         cur_node_use = cur_act_use;
@@ -377,7 +405,24 @@ void ActionLevelTracking(CFGType &cfg, CFGNodeType *node) {
 
 void LiveAnalysis(CFGType &cfg) {
   VarCollect(cfg, cfg.id_to_var, cfg.var_to_id);
+  // std::cerr << "all vars collected" << std::endl;
+  // for (auto var : cfg.id_to_var) {
+  //   std::cerr << "\tid=" << cfg.var_to_id[var] << " var=" << var << std::endl;
+  // }
   UseDefCollect(cfg, cfg.id_to_var, cfg.var_to_id);
+  // for (auto node : cfg.nodes) {
+  //   std::cerr << "block " << node->corresponding_block->label_full << std::endl;
+  //   std::cerr << "\tblock_use_vars=";
+  //   for (auto i : node->block_use_vars) {
+  //     std::cerr << i << " ";
+  //   }
+  //   std::cerr << std::endl;
+  //   std::cerr << "\tblock_def_vars=";
+  //   for (auto i : node->block_def_vars) {
+  //     std::cerr << i << " ";
+  //   }
+  //   std::cerr << std::endl;
+  // }
   BlockLevelTracking(cfg, cfg.id_to_var, cfg.var_to_id);
   for (auto node : cfg.nodes) {
     ActionLevelTracking(cfg, node.get());

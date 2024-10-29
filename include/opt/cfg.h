@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "IR/IR_basic.h"
+#include "ast/expr_astnode.h"
 using CFGNodeCollection = std::list<class CFGNodeType *>;
 class CFGNodeType {
  public:
@@ -176,3 +177,39 @@ inline bool VRegCheck(const std::string &s) {
   if (s[0] != '%' && s[0] != '$' && s[0] != '#') return false;
   return true;
 }
+
+class BEQAction : public BRAction {
+ public:
+  std::string rs1, rs2;
+  void RecursivePrint(std::ostream &os) const {
+    os << "beq " << rs1 << ' ' << rs2 << ' ' << cond << ", label %" << true_label_full << ", label %"
+       << false_label_full << "\n";
+  }
+};
+
+class BNEAction : public BRAction {
+ public:
+  std::string rs1, rs2;
+  void RecursivePrint(std::ostream &os) const {
+    os << "bne " << rs1 << ' ' << rs2 << ' ' << cond << ", label %" << true_label_full << ", label %"
+       << false_label_full << "\n";
+  }
+};
+
+class BLTAction : public BRAction {
+ public:
+  std::string rs1, rs2;
+  void RecursivePrint(std::ostream &os) const {
+    os << "blt " << rs1 << ' ' << rs2 << ' ' << cond << ", label %" << true_label_full << ", label %"
+       << false_label_full << "\n";
+  }
+};
+
+class BGEAction : public BRAction {
+ public:
+  std::string rs1, rs2;
+  void RecursivePrint(std::ostream &os) const {
+    os << "bge " << rs1 << ' ' << rs2 << ' ' << cond << ", label %" << true_label_full << ", label %"
+       << false_label_full << "\n";
+  }
+};

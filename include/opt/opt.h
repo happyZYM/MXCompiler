@@ -4,3 +4,4 @@
 #include "mem2reg.h"
 #include "regalloc.h"
 #include "dce.h"
+#include "betterbr.h"

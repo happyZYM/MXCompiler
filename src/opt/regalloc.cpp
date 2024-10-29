@@ -174,13 +174,9 @@ void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, C
     bool use_def_init = false;
     for (auto act : block->actions) {
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
-        if (var_to_id.find(br_act->cond) != var_to_id.end()) {
-          ApplyColoringResult(br_act->cond);
-        }
+        throw std::runtime_error("BRAction should not exist in the middle of a block");
       } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {
-        if (!std::holds_alternative<LLVMVOIDType>(ret_act->type) && var_to_id.find(ret_act->value) != var_to_id.end()) {
-          ApplyColoringResult(ret_act->value);
-        }
+        throw std::runtime_error("RETAction should not exist in the middle of a block");
       } else if (auto bin_act = std::dynamic_pointer_cast<BinaryOperationAction>(act)) {
         if (var_to_id.find(bin_act->operand1_full) != var_to_id.end()) {
           ApplyColoringResult(bin_act->operand1_full);
@@ -281,8 +277,38 @@ void TranslateColorResult(std::shared_ptr<FunctionDefItem> func, CFGType &cfg, C
     {
       auto act = block->exit_action;
       if (auto br_act = std::dynamic_pointer_cast<BRAction>(act)) {
-        if (var_to_id.find(br_act->cond) != var_to_id.end()) {
-          ApplyColoringResult(br_act->cond);
+        if (auto beq_act = std::dynamic_pointer_cast<BEQAction>(br_act)) {
+          if (var_to_id.find(beq_act->rs1) != var_to_id.end()) {
+            ApplyColoringResult(beq_act->rs1);
+          }
+          if (var_to_id.find(beq_act->rs2) != var_to_id.end()) {
+            ApplyColoringResult(beq_act->rs2);
+          }
+        } else if (auto bne_act = std::dynamic_pointer_cast<BNEAction>(br_act)) {
+          if (var_to_id.find(bne_act->rs1) != var_to_id.end()) {
+            ApplyColoringResult(bne_act->rs1);
+          }
+          if (var_to_id.find(bne_act->rs2) != var_to_id.end()) {
+            ApplyColoringResult(bne_act->rs2);
+          }
+        } else if (auto blt_act = std::dynamic_pointer_cast<BLTAction>(br_act)) {
+          if (var_to_id.find(blt_act->rs1) != var_to_id.end()) {
+            ApplyColoringResult(blt_act->rs1);
+          }
+          if (var_to_id.find(blt_act->rs2) != var_to_id.end()) {
+            ApplyColoringResult(blt_act->rs2);
+          }
+        } else if (auto bge_act = std::dynamic_pointer_cast<BGEAction>(br_act)) {
+          if (var_to_id.find(bge_act->rs1) != var_to_id.end()) {
+            ApplyColoringResult(bge_act->rs1);
+          }
+          if (var_to_id.find(bge_act->rs2) != var_to_id.end()) {
+            ApplyColoringResult(bge_act->rs2);
+          }
+        } else {
+          if (var_to_id.find(br_act->cond) != var_to_id.end()) {
+            ApplyColoringResult(br_act->cond);
+          }
         }
       } else if (auto ret_act = std::dynamic_pointer_cast<RETAction>(act)) {
         if (!std::holds_alternative<LLVMVOIDType>(ret_act->type) && var_to_id.find(ret_act->value) != var_to_id.end()) {
