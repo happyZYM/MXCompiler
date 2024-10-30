@@ -24,6 +24,10 @@ void FetchValueToReg(std::string original_val, std::string &out_reg, FuncLayout 
     std::string label_in_asm = original_val.substr(1, original_val.size() - 1);
     code_lines.push_back("la " + out_reg + ", " + label_in_asm);
   } else if (original_val[0] == '-' || std::isdigit(original_val[0])) {
+    if (original_val == "0") {
+      out_reg = "x0";
+      return;
+    }
     // immediate value
     out_reg = AllocateTmpReg(available_tmp_regs);
     StoreImmToReg(std::stoi(original_val), out_reg, code_lines);
@@ -75,26 +79,38 @@ void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code
       std::string rs1_reg, rs2_reg;
       FetchValueToReg(beq_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
       FetchValueToReg(beq_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("beq " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + beq_act->true_label_full);
-      code_lines.push_back("j .entrylabel." + beq_act->false_label_full);
+      // code_lines.push_back("beq " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + beq_act->true_label_full);
+      // code_lines.push_back("j .entrylabel." + beq_act->false_label_full);
+      // trace optimization
+      code_lines.push_back(("bne " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + beq_act->false_label_full));
+      code_lines.push_back("j .entrylabel." + beq_act->true_label_full);
     } else if (auto bne_act = std::dynamic_pointer_cast<BNEAction>(br_act)) {
       std::string rs1_reg, rs2_reg;
       FetchValueToReg(bne_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
       FetchValueToReg(bne_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("bne " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bne_act->true_label_full);
-      code_lines.push_back("j .entrylabel." + bne_act->false_label_full);
+      // code_lines.push_back("bne " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bne_act->true_label_full);
+      // code_lines.push_back("j .entrylabel." + bne_act->false_label_full);
+      // trace optimization
+      code_lines.push_back(("beq " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bne_act->false_label_full));
+      code_lines.push_back("j .entrylabel." + bne_act->true_label_full);
     } else if (auto blt_act = std::dynamic_pointer_cast<BLTAction>(br_act)) {
       std::string rs1_reg, rs2_reg;
       FetchValueToReg(blt_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
       FetchValueToReg(blt_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("blt " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + blt_act->true_label_full);
-      code_lines.push_back("j .entrylabel." + blt_act->false_label_full);
+      // code_lines.push_back("blt " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + blt_act->true_label_full);
+      // code_lines.push_back("j .entrylabel." + blt_act->false_label_full);
+      // trace optimization
+      code_lines.push_back("bge " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + blt_act->false_label_full);
+      code_lines.push_back("j .entrylabel." + blt_act->true_label_full);
     } else if (auto bge_act = std::dynamic_pointer_cast<BGEAction>(br_act)) {
       std::string rs1_reg, rs2_reg;
       FetchValueToReg(bge_act->rs1, rs1_reg, layout, code_lines, available_tmp_regs);
       FetchValueToReg(bge_act->rs2, rs2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("bge " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bge_act->true_label_full);
-      code_lines.push_back("j .entrylabel." + bge_act->false_label_full);
+      // code_lines.push_back("bge " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bge_act->true_label_full);
+      // code_lines.push_back("j .entrylabel." + bge_act->false_label_full);
+      // trace optimization
+      code_lines.push_back("blt " + rs1_reg + ", " + rs2_reg + ", .entrylabel." + bge_act->false_label_full);
+      code_lines.push_back("j .entrylabel." + bge_act->true_label_full);
     } else {
       std::string cond_reg;
       FetchValueToReg(br_act->cond, cond_reg, layout, code_lines, available_tmp_regs);
