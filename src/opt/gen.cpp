@@ -71,6 +71,12 @@ bool CanActivateImmSupport(const std::string &val, int64_t min_val, int64_t max_
   int64_t num = std::stoll(val);
   return num >= min_val && num <= max_val;
 }
+
+inline bool IsPowerOf2(const std::string &val) {
+  if (val[0] != '-' && !std::isdigit(val[0])) return false;
+  int64_t num = std::stoll(val);
+  return num > 0 && (num & (num - 1)) == 0;
+}
 void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code_lines, FuncLayout &layout,
                  const std::unordered_map<std::string, IRClassInfo> &low_level_class_info) {
   std::vector<std::string> available_tmp_regs = held_tmp_regs;
@@ -184,15 +190,55 @@ void GenerateASM(std::shared_ptr<ActionItem> act, std::vector<std::string> &code
         code_lines.push_back("sub " + res_reg + ", " + operand1_reg + ", " + operand2_reg);
       }
     } else if (binary_act->op == "mul") {
-      std::string operand1_reg, operand2_reg;
-      FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
-      FetchValueToReg(binary_act->operand2_full, operand2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("mul " + res_reg + ", " + operand1_reg + ", " + operand2_reg);
+      bool is_constant = CanActivateImmSupport(binary_act->operand1_full, std::numeric_limits<int32_t>::min(),
+                                               std::numeric_limits<int32_t>::max()) &&
+                         CanActivateImmSupport(binary_act->operand2_full, std::numeric_limits<int32_t>::min(),
+                                               std::numeric_limits<int32_t>::max());
+      bool ope1_is_2power = IsPowerOf2(binary_act->operand1_full);
+      bool ope2_is_2power = IsPowerOf2(binary_act->operand2_full);
+      if (is_constant) {
+        int32_t result = std::stoi(binary_act->operand1_full) * std::stoi(binary_act->operand2_full);
+        StoreImmToReg(result, res_reg, code_lines);
+      } else if (ope1_is_2power || ope2_is_2power) {
+        if (!ope1_is_2power) {
+          std::swap(binary_act->operand1_full, binary_act->operand2_full);
+        }
+        std::string operand2_reg;
+        FetchValueToReg(binary_act->operand2_full, operand2_reg, layout, code_lines, available_tmp_regs);
+        code_lines.push_back("slli " + res_reg + ", " + operand2_reg + ", " +
+                             std::to_string(std::countr_zero(std::stoull(binary_act->operand1_full))));
+      } else {
+        std::string operand1_reg, operand2_reg;
+        FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
+        FetchValueToReg(binary_act->operand2_full, operand2_reg, layout, code_lines, available_tmp_regs);
+        code_lines.push_back("mul " + res_reg + ", " + operand1_reg + ", " + operand2_reg);
+      }
     } else if (binary_act->op == "sdiv") {
-      std::string operand1_reg, operand2_reg;
-      FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
-      FetchValueToReg(binary_act->operand2_full, operand2_reg, layout, code_lines, available_tmp_regs);
-      code_lines.push_back("div " + res_reg + ", " + operand1_reg + ", " + operand2_reg);
+      bool is_constant = CanActivateImmSupport(binary_act->operand1_full, std::numeric_limits<int32_t>::min(),
+                                               std::numeric_limits<int32_t>::max()) &&
+                         CanActivateImmSupport(binary_act->operand2_full, std::numeric_limits<int32_t>::min(),
+                                               std::numeric_limits<int32_t>::max());
+      bool ope2_is_2power = IsPowerOf2(binary_act->operand2_full);
+      if (is_constant && binary_act->operand2_full != "0") {
+        int32_t result = std::stoi(binary_act->operand1_full) / std::stoi(binary_act->operand2_full);
+        StoreImmToReg(result, res_reg, code_lines);
+      } else if (ope2_is_2power) {
+        std::string operand1_reg;
+        std::string tmp1_reg = AllocateTmpReg(available_tmp_regs);
+        std::string tmp2_reg = AllocateTmpReg(available_tmp_regs);
+        FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
+        std::string shift_str = std::to_string(std::countr_zero(std::stoull(binary_act->operand2_full)));
+        code_lines.push_back("srai " + tmp1_reg + ", " + operand1_reg + ", 31");  // get sign bit
+        code_lines.push_back("li " + tmp2_reg + ", " + std::to_string(std::stoull(binary_act->operand2_full) - 1));
+        code_lines.push_back("and " + tmp2_reg + ", " + tmp1_reg + ", " + tmp2_reg);
+        code_lines.push_back("add " + tmp2_reg + ", " + operand1_reg + ", " + tmp2_reg);
+        code_lines.push_back("srai " + res_reg + ", " + tmp2_reg + ", " + shift_str);
+      } else {
+        std::string operand1_reg, operand2_reg;
+        FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
+        FetchValueToReg(binary_act->operand2_full, operand2_reg, layout, code_lines, available_tmp_regs);
+        code_lines.push_back("div " + res_reg + ", " + operand1_reg + ", " + operand2_reg);
+      }
     } else if (binary_act->op == "srem") {
       std::string operand1_reg, operand2_reg;
       FetchValueToReg(binary_act->operand1_full, operand1_reg, layout, code_lines, available_tmp_regs);
