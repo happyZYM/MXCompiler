@@ -16,46 +16,69 @@
 	sw	s2, 16(sp)                      # 4-byte Folded Spill
 	sw	s3, 12(sp)                      # 4-byte Folded Spill
 	sw	s4, 8(sp)                       # 4-byte Folded Spill
+	sw	s5, 4(sp)                       # 4-byte Folded Spill
 	mv	s0, a1
 	mv	s1, a0
 	call	strlen
-	mv	s2, a0
+	mv	s4, a0
 	mv	a0, s0
 	call	strlen
-	mv	s3, a0
-	add	s4, a0, s2
-	addi	a0, s4, 1
+	mv	s2, a0
+	add	s5, a0, s4
+	addi	a0, s5, 1
 	call	malloc
-	blez	s2, .LBB0_3
-# %bb.1:                                # %.preheader1
-	add	a1, a0, s2
-	mv	a2, a0
-.LBB0_2:                                # =>This Inner Loop Header: Depth=1
-	lbu	a3, 0(s1)
-	sb	a3, 0(a2)
-	addi	a2, a2, 1
+	li	a1, 31
+	mv	s3, a0
+	blt	a1, s4, .LBB0_8
+# %bb.1:
+	blez	s4, .LBB0_4
+# %bb.2:                                # %.preheader1
+	add	a0, s3, s4
+	mv	a1, s3
+.LBB0_3:                                # =>This Inner Loop Header: Depth=1
+	lbu	a2, 0(s1)
+	sb	a2, 0(a1)
+	addi	a1, a1, 1
 	addi	s1, s1, 1
-	bne	a2, a1, .LBB0_2
-.LBB0_3:
-	blez	s3, .LBB0_6
-# %bb.4:                                # %.preheader
-	add	s2, s2, a0
-	add	a1, a0, s4
-.LBB0_5:                                # =>This Inner Loop Header: Depth=1
+	bne	a1, a0, .LBB0_3
+.LBB0_4:
+	li	a1, 31
+	add	a0, s3, s4
+	blt	a1, s2, .LBB0_9
+.LBB0_5:
+	blez	s2, .LBB0_10
+# %bb.6:                                # %.preheader
+	add	a1, s3, s5
+.LBB0_7:                                # =>This Inner Loop Header: Depth=1
 	lbu	a2, 0(s0)
-	sb	a2, 0(s2)
-	addi	s2, s2, 1
+	sb	a2, 0(a0)
+	addi	a0, a0, 1
 	addi	s0, s0, 1
-	bne	s2, a1, .LBB0_5
-.LBB0_6:
-	add	s4, s4, a0
-	sb	zero, 0(s4)
+	bne	a0, a1, .LBB0_7
+	j	.LBB0_10
+.LBB0_8:
+	mv	a0, s3
+	mv	a1, s1
+	mv	a2, s4
+	call	memcpy
+	li	a1, 31
+	add	a0, s3, s4
+	bge	a1, s2, .LBB0_5
+.LBB0_9:
+	mv	a1, s0
+	mv	a2, s2
+	call	memcpy
+.LBB0_10:
+	add	s5, s5, s3
+	sb	zero, 0(s5)
+	mv	a0, s3
 	lw	ra, 28(sp)                      # 4-byte Folded Reload
 	lw	s0, 24(sp)                      # 4-byte Folded Reload
 	lw	s1, 20(sp)                      # 4-byte Folded Reload
 	lw	s2, 16(sp)                      # 4-byte Folded Reload
 	lw	s3, 12(sp)                      # 4-byte Folded Reload
 	lw	s4, 8(sp)                       # 4-byte Folded Reload
+	lw	s5, 4(sp)                       # 4-byte Folded Reload
 	addi	sp, sp, 32
 	ret
 .builtin_Lfunc_end0:
@@ -99,19 +122,28 @@ string.substring:                       # @string.substring
 	sub	s1, a2, a1
 	addi	a0, s1, 1
 	call	malloc
-	add	a1, a0, s1
-	blez	s1, .LBB2_3
-# %bb.1:                                # %.preheader
-	add	s0, s0, s2
+	add	a1, s2, s0
+	li	a2, 31
+	add	s0, a0, s1
+	blt	a2, s1, .LBB2_4
+# %bb.1:
+	blez	s1, .LBB2_5
+# %bb.2:                                # %.preheader
 	mv	a2, a0
-.LBB2_2:                                # =>This Inner Loop Header: Depth=1
-	lbu	a3, 0(s0)
+.LBB2_3:                                # =>This Inner Loop Header: Depth=1
+	lbu	a3, 0(a1)
 	sb	a3, 0(a2)
 	addi	a2, a2, 1
-	addi	s0, s0, 1
-	bne	a2, a1, .LBB2_2
-.LBB2_3:
-	sb	zero, 0(a1)
+	addi	a1, a1, 1
+	bne	a2, s0, .LBB2_3
+	j	.LBB2_5
+.LBB2_4:
+	mv	s2, a0
+	mv	a2, s1
+	call	memmove
+	mv	a0, s2
+.LBB2_5:
+	sb	zero, 0(s0)
 	lw	ra, 12(sp)                      # 4-byte Folded Reload
 	lw	s0, 8(sp)                       # 4-byte Folded Reload
 	lw	s1, 4(sp)                       # 4-byte Folded Reload
